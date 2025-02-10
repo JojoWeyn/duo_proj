@@ -1,6 +1,8 @@
 package composite
 
 import (
+	"context"
+
 	v1 "github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/v1"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/kafka"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
@@ -28,8 +30,11 @@ func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
 	userRepo := postgres.NewUserRepository(db)
 	userUseCase := usecase.NewUserUseCase(userRepo)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	consumer := kafka.NewSaramaConsumer([]string{cfg.KafkaBrokers}, cfg.KafkaTopic)
-	go consumer.Start()
+	go consumer.Start(ctx)
 
 	handler := gin.Default()
 	v1.NewRouter(handler, userUseCase, cfg.GatewayURL)

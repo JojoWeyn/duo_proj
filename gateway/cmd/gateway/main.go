@@ -17,28 +17,31 @@ func main() {
 		log.Printf("Warning: .env file not found")
 	}
 
-	identityServiceURL := getEnv("IDENTITY_SERVICE_URL", "http://localhost:8080")
-	proxyHandler, err := v1.NewProxyHandler(identityServiceURL)
+	identityServiceURL := getEnv("IDENTITY_SERVICE_URL", "http://localhost:8081")
+	userServiceURL := getEnv("USER_SERVICE_URL", "http://localhost:8082")
+
+	proxy, err := v1.NewProxyHandler(identityServiceURL, userServiceURL)
 	if err != nil {
-		log.Fatalf("Failed to initialize proxy handler: %s", err.Error())
+		log.Fatalf("Failed to initialize identity proxy handler: %s", err.Error())
 	}
 
 	router := gin.Default()
 
 	refreshLimiter := rate.NewLimiter(rate.Every(1*time.Second), 1)
 
-	public := router.Group("/v1/auth")
+	public := router.Group("/v1")
 	{
-		public.POST("/register", proxyHandler.ProxyIdentityService())
-		public.POST("/login", proxyHandler.ProxyIdentityService())
-		public.POST("/refresh", middleware.RateLimitMiddleware(refreshLimiter), proxyHandler.ProxyIdentityService())
+		public.POST("/auth/register", proxy.ProxyIdentityService())
+		public.POST("/auth/login", proxy.ProxyIdentityService())
+		public.POST("/auth/refresh", middleware.RateLimitMiddleware(refreshLimiter), proxy.ProxyIdentityService())
+		public.GET("/:uuid", proxy.ProxyUserService())
 	}
 
-	protected := router.Group("/v1/auth")
+	protected := router.Group("/v1")
 	protected.Use(middleware.AuthMiddleware(identityServiceURL))
 	{
-		protected.POST("/logout", proxyHandler.ProxyIdentityService())
-		protected.GET("/token/status", proxyHandler.ProxyIdentityService())
+		protected.POST("/auth/logout", proxy.ProxyIdentityService())
+		protected.GET("/auth/token/status", proxy.ProxyIdentityService())
 	}
 
 	port := getEnv("PORT", "3211")

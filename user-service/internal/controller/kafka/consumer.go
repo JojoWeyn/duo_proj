@@ -1,7 +1,9 @@
 package kafka
 
 import (
+	"context"
 	"log"
+	"sync"
 
 	"github.com/IBM/sarama"
 )
@@ -18,7 +20,7 @@ func NewSaramaConsumer(brokers []string, topic string) *SaramaConsumer {
 	}
 }
 
-func (c *SaramaConsumer) Start() {
+func (c *SaramaConsumer) Start(ctx context.Context) {
 	config := sarama.NewConfig()
 	config.Consumer.Return.Errors = true
 
@@ -40,7 +42,21 @@ func (c *SaramaConsumer) Start() {
 	}
 	defer partitionConsumer.Close()
 
-	for message := range partitionConsumer.Messages() {
-		log.Printf("Received message: %s", string(message.Value))
-	}
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case message := <-partitionConsumer.Messages():
+				log.Printf("Received message: %s", string(message.Value))
+			case <-ctx.Done():
+				log.Println("Shutting down consumer...")
+				return
+			}
+		}
+	}()
+
+	wg.Wait()
 }
