@@ -2,6 +2,7 @@ package composite
 
 import (
 	v1 "github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/v1"
+	"log"
 
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/usecase"
@@ -24,6 +25,19 @@ type UserComposite struct {
 func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
 	if err := db.AutoMigrate(&entity.User{}, &entity.Rank{}); err != nil {
 		return nil, err
+	}
+
+	var count int64
+	db.Model(&entity.Rank{}).Count(&count)
+	if count == 0 {
+		ranks := []entity.Rank{
+			{ID: 1, Name: "Новичек"},
+		}
+
+		if err := db.Create(&ranks).Error; err != nil {
+			log.Printf("Failed to add default ranks: %v", err)
+		}
+		log.Println("Default ranks added")
 	}
 
 	userRepo := postgres.NewUserRepository(db)

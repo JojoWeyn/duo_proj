@@ -25,9 +25,8 @@ func NewUserUseCase(userRepo UserRepository) *UserUseCase {
 }
 
 func (uc *UserUseCase) CreateUser(ctx context.Context, uuid uuid.UUID) error {
-	user := &entity.User{
-		UUID: uuid,
-	}
+	user := entity.NewUser(uuid)
+
 	return uc.userRepo.Create(ctx, user)
 }
 
