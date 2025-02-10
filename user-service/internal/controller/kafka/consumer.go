@@ -2,31 +2,39 @@ package kafka
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/IBM/sarama"
+	"github.com/google/uuid"
 )
 
-type SaramaConsumerGroup struct {
-	brokers []string
-	topic   string
-	groupID string
+type userUseCase interface {
+	CreateUser(ctx context.Context, uuid uuid.UUID) error
 }
 
-func NewSaramaConsumerGroup(brokers []string, topic, groupID string) *SaramaConsumerGroup {
+type SaramaConsumerGroup struct {
+	brokers     []string
+	topic       string
+	groupID     string
+	userUsecase userUseCase
+}
+
+func NewSaramaConsumerGroup(userUsecase userUseCase, brokers []string, topic, groupID string) *SaramaConsumerGroup {
 	return &SaramaConsumerGroup{
-		brokers: brokers,
-		topic:   topic,
-		groupID: groupID,
+		brokers:     brokers,
+		topic:       topic,
+		groupID:     groupID,
+		userUsecase: userUsecase,
 	}
 }
 
 func (c *SaramaConsumerGroup) Start(ctx context.Context) {
 	config := sarama.NewConfig()
-	config.Version = sarama.V2_1_0_0
+	config.Version = sarama.MaxVersion
 	config.Consumer.Return.Errors = true
 	config.Consumer.Offsets.Initial = sarama.OffsetNewest
 
@@ -39,7 +47,7 @@ func (c *SaramaConsumerGroup) Start(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	consumer := ConsumerGroupHandler{}
+	consumer := ConsumerGroupHandler{useCase: c.userUsecase}
 
 	go func() {
 		for {
@@ -63,13 +71,34 @@ func (c *SaramaConsumerGroup) Start(ctx context.Context) {
 	}
 }
 
-type ConsumerGroupHandler struct{}
+type ConsumerGroupHandler struct {
+	useCase userUseCase
+}
 
 func (ConsumerGroupHandler) Setup(_ sarama.ConsumerGroupSession) error   { return nil }
 func (ConsumerGroupHandler) Cleanup(_ sarama.ConsumerGroupSession) error { return nil }
-func (ConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+func (c ConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for message := range claim.Messages() {
 		log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
+
+		var msg struct {
+			UUID string `json:"uuid"`
+		}
+
+		if err := json.Unmarshal(message.Value, &msg); err != nil {
+			log.Printf("Failed to parse message JSON: %v", err)
+			continue
+		}
+
+		receivedUUID, err := uuid.Parse(msg.UUID)
+		if err != nil {
+			log.Printf("Invalid UUID format: %v", err)
+			continue
+		}
+		if err := c.useCase.CreateUser(context.Background(), receivedUUID); err != nil {
+			log.Printf("Error creating user: %v", err)
+		}
+		log.Printf("User with UUID %s successfully created", receivedUUID)
 		session.MarkMessage(message, "")
 	}
 	return nil

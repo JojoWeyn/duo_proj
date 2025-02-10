@@ -17,7 +17,8 @@ type Config struct {
 }
 
 type UserComposite struct {
-	handler *gin.Engine
+	handler     *gin.Engine
+	UserUseCase *usecase.UserUseCase
 }
 
 func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
@@ -26,13 +27,14 @@ func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
 	}
 
 	userRepo := postgres.NewUserRepository(db)
-	userUseCase := usecase.NewUserUseCase(userRepo)
+	UserUseCase := usecase.NewUserUseCase(userRepo)
 
 	handler := gin.Default()
-	v1.NewRouter(handler, userUseCase, cfg.GatewayURL)
+	v1.NewRouter(handler, UserUseCase, cfg.GatewayURL)
 
 	return &UserComposite{
-		handler: handler,
+		handler:     handler,
+		UserUseCase: UserUseCase,
 	}, nil
 }
 

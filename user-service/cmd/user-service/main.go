@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/kafka"
 	"log"
 	"os"
 	"time"
+
+	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/kafka"
 
 	"github.com/JojoWeyn/duo-proj/user-service/internal/composite"
 	"github.com/JojoWeyn/duo-proj/user-service/pkg/client/postgresql"
@@ -43,7 +44,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	consumer := kafka.NewSaramaConsumerGroup([]string{cfg.KafkaBrokers}, cfg.KafkaTopic, "1")
+	consumer := kafka.NewSaramaConsumerGroup(app.UserUseCase, []string{cfg.KafkaBrokers}, cfg.KafkaTopic, "user-service-group")
 	go consumer.Start(ctx)
 
 	port := getEnv("USER_PORT", "8082")
