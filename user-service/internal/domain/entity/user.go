@@ -24,5 +24,6 @@ func NewUser(userUUID uuid.UUID) *User {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		RankID:    1,
+		Avatar:    "https://ybis.ru/wp-content/uploads/2023/09/solntse-kartinka-1.webp",
 	}
 }

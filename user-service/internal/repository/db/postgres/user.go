@@ -24,7 +24,7 @@ func (r *UserRepository) Create(ctx context.Context, user *entity.User) error {
 
 func (r *UserRepository) FindByUUID(ctx context.Context, uuid uuid.UUID) (*entity.User, error) {
 	var user entity.User
-	if err := r.db.WithContext(ctx).Where("uuid = ?", uuid).First(&user).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Rank").Where("uuid = ?", uuid).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
