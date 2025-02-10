@@ -18,7 +18,7 @@ func main() {
 	}
 
 	identityServiceURL := getEnv("IDENTITY_SERVICE_URL", "http://localhost:8081")
-	userServiceURL := getEnv("USER_SERVICE_URL", "http://localhost:8082")
+	userServiceURL := getEnv("USER_SERVICE_URL", "http://176.109.108.209:8082")
 
 	proxy, err := v1.NewProxyHandler(identityServiceURL, userServiceURL)
 	if err != nil {
@@ -34,7 +34,7 @@ func main() {
 		public.POST("/auth/register", proxy.ProxyIdentityService())
 		public.POST("/auth/login", proxy.ProxyIdentityService())
 		public.POST("/auth/refresh", middleware.RateLimitMiddleware(refreshLimiter), proxy.ProxyIdentityService())
-		public.GET("/:uuid", proxy.ProxyUserService())
+		public.GET("/users/:uuid", proxy.ProxyUserService())
 	}
 
 	protected := router.Group("/v1")

@@ -3,60 +3,74 @@ package kafka
 import (
 	"context"
 	"log"
-	"sync"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/IBM/sarama"
 )
 
-type SaramaConsumer struct {
+type SaramaConsumerGroup struct {
 	brokers []string
 	topic   string
+	groupID string
 }
 
-func NewSaramaConsumer(brokers []string, topic string) *SaramaConsumer {
-	return &SaramaConsumer{
+func NewSaramaConsumerGroup(brokers []string, topic, groupID string) *SaramaConsumerGroup {
+	return &SaramaConsumerGroup{
 		brokers: brokers,
 		topic:   topic,
+		groupID: groupID,
 	}
 }
 
-func (c *SaramaConsumer) Start(ctx context.Context) {
+func (c *SaramaConsumerGroup) Start(ctx context.Context) {
 	config := sarama.NewConfig()
+	config.Version = sarama.V2_1_0_0
 	config.Consumer.Return.Errors = true
+	config.Consumer.Offsets.Initial = sarama.OffsetNewest
 
-	client, err := sarama.NewClient(c.brokers, config)
+	consumerGroup, err := sarama.NewConsumerGroup(c.brokers, c.groupID, config)
 	if err != nil {
-		log.Fatalf("Error creating Kafka client: %v", err)
+		log.Fatalf("Error creating consumer group client: %v", err)
 	}
-	defer client.Close()
+	defer consumerGroup.Close()
 
-	consumer, err := sarama.NewConsumerFromClient(client)
-	if err != nil {
-		log.Fatalf("Error creating Kafka consumer: %v", err)
-	}
-	defer consumer.Close()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	partitionConsumer, err := consumer.ConsumePartition(c.topic, 0, sarama.OffsetNewest)
-	if err != nil {
-		log.Fatalf("Error creating partition consumer: %v", err)
-	}
-	defer partitionConsumer.Close()
-
-	var wg sync.WaitGroup
-	wg.Add(1)
+	consumer := ConsumerGroupHandler{}
 
 	go func() {
-		defer wg.Done()
 		for {
-			select {
-			case message := <-partitionConsumer.Messages():
-				log.Printf("Received message: %s", string(message.Value))
-			case <-ctx.Done():
-				log.Println("Shutting down consumer...")
-				return
+			if err := consumerGroup.Consume(ctx, []string{c.topic}, &consumer); err != nil {
+				if ctx.Err() != nil {
+					log.Println("Consumer loop exiting due to context cancellation")
+					return
+				}
+				log.Printf("Error from consumer: %v", err)
 			}
 		}
 	}()
 
-	wg.Wait()
+	sigterm := make(chan os.Signal, 1)
+	signal.Notify(sigterm, syscall.SIGINT, syscall.SIGTERM)
+	select {
+	case <-ctx.Done():
+		log.Println("terminating: context cancelled")
+	case <-sigterm:
+		log.Println("terminating: via signal")
+	}
+}
+
+type ConsumerGroupHandler struct{}
+
+func (ConsumerGroupHandler) Setup(_ sarama.ConsumerGroupSession) error   { return nil }
+func (ConsumerGroupHandler) Cleanup(_ sarama.ConsumerGroupSession) error { return nil }
+func (ConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+	for message := range claim.Messages() {
+		log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
+		session.MarkMessage(message, "")
+	}
+	return nil
 }

@@ -76,7 +76,7 @@ func (r *identityRoutes) register(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusCreated)
+	c.JSON(http.StatusOK, gin.H{"message": "user registered successfully"})
 }
 
 func (r *identityRoutes) login(c *gin.Context) {

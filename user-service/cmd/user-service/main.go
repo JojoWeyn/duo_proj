@@ -1,12 +1,13 @@
 package main
 
 import (
+	"context"
+	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/kafka"
 	"log"
 	"os"
 	"time"
 
 	"github.com/JojoWeyn/duo-proj/user-service/internal/composite"
-	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/JojoWeyn/duo-proj/user-service/pkg/client/postgresql"
 	"github.com/joho/godotenv"
 )
@@ -28,13 +29,9 @@ func main() {
 		log.Fatalf("Failed to initialize db: %s", err.Error())
 	}
 
-	if err := db.AutoMigrate(&entity.User{}); err != nil {
-		log.Fatalf("Failed to migrate db: %s", err.Error())
-	}
-
 	cfg := composite.Config{
-		KafkaBrokers: getEnv("KAFKA_BROKERS", "176.109.108.209:9092"),
-		KafkaTopic:   getEnv("KAFKA_TOPIC", "user_created"),
+		KafkaBrokers: getEnv("KAFKA_BROKERS", "kafka:29092"),
+		KafkaTopic:   getEnv("KAFKA_TOPIC", "user_create"),
 		GatewayURL:   getEnv("GATEWAY_URL", "176.109.108.209:3211"),
 	}
 
@@ -42,6 +39,12 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to create application:", err)
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	consumer := kafka.NewSaramaConsumerGroup([]string{cfg.KafkaBrokers}, cfg.KafkaTopic, "1")
+	go consumer.Start(ctx)
 
 	port := getEnv("USER_PORT", "8082")
 	if err := app.Handler().Run(":" + port); err != nil {
