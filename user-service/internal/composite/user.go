@@ -2,6 +2,7 @@ package composite
 
 import (
 	v1 "github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/v1"
+	"github.com/JojoWeyn/duo-proj/user-service/internal/service"
 	"log"
 
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
@@ -15,6 +16,7 @@ type Config struct {
 	KafkaBrokers string
 	KafkaTopic   string
 	GatewayURL   string
+	Secret       string
 }
 
 type UserComposite struct {
@@ -42,9 +44,10 @@ func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
 
 	userRepo := postgres.NewUserRepository(db)
 	UserUseCase := usecase.NewUserUseCase(userRepo)
+	TokenService := service.NewTokenService(cfg.Secret)
 
 	handler := gin.Default()
-	v1.NewRouter(handler, UserUseCase, cfg.GatewayURL)
+	v1.NewRouter(handler, UserUseCase, TokenService, cfg.GatewayURL)
 
 	return &UserComposite{
 		handler:     handler,

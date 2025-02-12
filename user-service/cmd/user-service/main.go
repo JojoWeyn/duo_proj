@@ -34,6 +34,7 @@ func main() {
 		KafkaBrokers: getEnv("KAFKA_BROKERS", "kafka:29092"),
 		KafkaTopic:   getEnv("KAFKA_TOPIC", "user_create"),
 		GatewayURL:   getEnv("GATEWAY_URL", "176.109.108.209:3211"),
+		Secret:       getEnv("JWT_SIGNING_KEY", "your-signing-key"),
 	}
 
 	app, err := composite.NewUserComposite(db, cfg)

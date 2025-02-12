@@ -30,6 +30,14 @@ func (r *UserRepository) FindByUUID(ctx context.Context, uuid uuid.UUID) (*entit
 	return &user, nil
 }
 
+func (r *UserRepository) GetAll(ctx context.Context, uuid uuid.UUID) ([]*entity.User, error) {
+	var users []*entity.User
+	if err := r.db.WithContext(ctx).Preload("Rank").Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (r *UserRepository) Update(ctx context.Context, user *entity.User) error {
 	return r.db.WithContext(ctx).Save(user).Error
 }

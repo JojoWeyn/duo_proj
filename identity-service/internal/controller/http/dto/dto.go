@@ -21,5 +21,5 @@ type TokenResponse struct {
 }
 
 type TokenStatusResponse struct {
-	IsBlacklisted bool `json:"is_blacklisted"`
+	IsBlacklisted string `json:"is_blacklisted"`
 }

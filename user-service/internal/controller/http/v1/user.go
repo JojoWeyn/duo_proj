@@ -2,36 +2,53 @@ package v1
 
 import (
 	"context"
-	"net/http"
-
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"net/http"
+	"strings"
 )
 
 type UserUseCase interface {
 	GetUser(ctx context.Context, uuid uuid.UUID) (*entity.User, error)
 	UpdateUser(ctx context.Context, uuid uuid.UUID, user *entity.User) error
 	DeleteUser(ctx context.Context, uuid uuid.UUID) error
+	GetAllUsers(ctx context.Context) ([]*entity.User, error)
+}
+
+type TokenService interface {
+	Validate(token string) (string, error)
 }
 
 type userRoutes struct {
 	uc UserUseCase
+	ts TokenService
 }
 
-func newUserRoutes(handler *gin.RouterGroup, uc UserUseCase) {
+func newUserRoutes(handler *gin.RouterGroup, uc UserUseCase, ts TokenService) {
 	r := &userRoutes{
 		uc: uc,
+		ts: ts,
 	}
 
 	users := handler.Group("/users")
 	{
 		users.GET("/:uuid", r.getUser)
-		users.PUT("/:uuid", r.updateUser)
-		users.DELETE("/:uuid", r.deleteUser)
+		users.PUT("/update", r.updateUser)
+		users.DELETE("/", r.deleteUser)
+		users.GET("/", r.getAllUsers)
 	}
 }
 
+func (r *userRoutes) getAllUsers(c *gin.Context) {
+	users, err := r.uc.GetAllUsers(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get users"})
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
 func (r *userRoutes) getUser(c *gin.Context) {
 	userUUID, err := uuid.Parse(c.Param("uuid"))
 	if err != nil {
@@ -49,9 +66,22 @@ func (r *userRoutes) getUser(c *gin.Context) {
 }
 
 func (r *userRoutes) updateUser(c *gin.Context) {
-	userUUID, err := uuid.Parse(c.Param("uuid"))
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no token provided"})
+		return
+	}
+	token = strings.TrimPrefix(token, "Bearer ")
+
+	sub, err := r.ts.Validate(token)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID format"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+	}
+
+	userUUID, err := uuid.Parse(sub)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": userUUID})
 		return
 	}
 

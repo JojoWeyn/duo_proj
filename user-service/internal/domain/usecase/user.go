@@ -12,6 +12,7 @@ type UserRepository interface {
 	FindByUUID(ctx context.Context, uuid uuid.UUID) (*entity.User, error)
 	Update(ctx context.Context, user *entity.User) error
 	Delete(ctx context.Context, uuid uuid.UUID) error
+	GetAll(ctx context.Context, uuid uuid.UUID) ([]*entity.User, error)
 }
 
 type UserUseCase struct {
@@ -24,7 +25,7 @@ func NewUserUseCase(userRepo UserRepository) *UserUseCase {
 	}
 }
 
-func (uc *UserUseCase) CreateUser(ctx context.Context, uuid uuid.UUID) error {
+func (uc *UserUseCase) CreateUsers(ctx context.Context, uuid uuid.UUID) error {
 	user := entity.NewUser(uuid)
 
 	return uc.userRepo.Create(ctx, user)
@@ -34,6 +35,9 @@ func (uc *UserUseCase) GetUser(ctx context.Context, uuid uuid.UUID) (*entity.Use
 	return uc.userRepo.FindByUUID(ctx, uuid)
 }
 
+func (uc *UserUseCase) GetAllUser(ctx context.Context) ([]*entity.User, error) {
+	return uc.userRepo.GetAll(ctx, uuid.UUID{})
+}
 func (uc *UserUseCase) UpdateUser(ctx context.Context, uuid uuid.UUID, updateData *entity.User) error {
 	user, err := uc.userRepo.FindByUUID(ctx, uuid)
 	if err != nil {

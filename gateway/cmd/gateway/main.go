@@ -34,7 +34,7 @@ func main() {
 		public.POST("/auth/register", proxy.ProxyIdentityService())
 		public.POST("/auth/login", proxy.ProxyIdentityService())
 		public.POST("/auth/refresh", middleware.RateLimitMiddleware(refreshLimiter), proxy.ProxyIdentityService())
-		public.GET("/users/:uuid", proxy.ProxyUserService())
+
 	}
 
 	protected := router.Group("/v1")
@@ -42,6 +42,9 @@ func main() {
 	{
 		protected.POST("/auth/logout", proxy.ProxyIdentityService())
 		protected.GET("/auth/token/status", proxy.ProxyIdentityService())
+		protected.GET("/users/:uuid", proxy.ProxyUserService())
+		protected.PUT("/users/update", proxy.ProxyUserService())
+		protected.GET("/users", proxy.ProxyUserService())
 	}
 
 	port := getEnv("PORT", "3211")

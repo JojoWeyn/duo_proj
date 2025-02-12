@@ -19,6 +19,7 @@ type IdentityUsecase interface {
 	Login(ctx context.Context, login, password string) (*usecase.Tokens, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*usecase.Tokens, error)
 	Logout(ctx context.Context, token string) error
+	ValidateToken(ctx context.Context, token string, isRefreshToken bool) (string, error)
 }
 
 type identityRoutes struct {
@@ -51,15 +52,17 @@ func (r *identityRoutes) checkToken(c *gin.Context) {
 
 	token = strings.TrimPrefix(token, "Bearer ")
 
-	isBlacklisted, err := r.tokenRepo.IsBlacklisted(c.Request.Context(), token)
+	isBlacklisted, err := r.identityUsecase.ValidateToken(c.Request.Context(), token, false)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.TokenStatusResponse{
-		IsBlacklisted: isBlacklisted,
-	})
+	if isBlacklisted != "" {
+		c.JSON(http.StatusOK, dto.TokenStatusResponse{
+			IsBlacklisted: "false",
+		})
+	}
 }
 
 func (r *identityRoutes) register(c *gin.Context) {

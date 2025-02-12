@@ -10,7 +10,7 @@ import (
 )
 
 type TokenStatus struct {
-	IsBlacklisted bool `json:"is_blacklisted"`
+	IsBlacklisted string `json:"is_blacklisted"`
 }
 
 func AuthMiddleware(identityServiceURL string) gin.HandlerFunc {
@@ -51,12 +51,6 @@ func AuthMiddleware(identityServiceURL string) gin.HandlerFunc {
 		var tokenStatus TokenStatus
 		if err := json.NewDecoder(resp.Body).Decode(&tokenStatus); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse token status"})
-			c.Abort()
-			return
-		}
-
-		if tokenStatus.IsBlacklisted {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "token is blacklisted"})
 			c.Abort()
 			return
 		}
