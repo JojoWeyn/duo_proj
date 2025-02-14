@@ -13,7 +13,7 @@ import (
 )
 
 type userUseCase interface {
-	CreateUser(ctx context.Context, uuid uuid.UUID) error
+	CreateUser(ctx context.Context, uuid uuid.UUID, Login string) error
 }
 
 type SaramaConsumerGroup struct {
@@ -82,7 +82,8 @@ func (c ConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, 
 		log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
 
 		var msg struct {
-			UUID string `json:"uuid"`
+			UUID  string `json:"uuid"`
+			Login string `json:"login"`
 		}
 
 		if err := json.Unmarshal(message.Value, &msg); err != nil {
@@ -95,7 +96,7 @@ func (c ConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, 
 			log.Printf("Invalid UUID format: %v", err)
 			continue
 		}
-		if err := c.useCase.CreateUser(context.Background(), receivedUUID); err != nil {
+		if err := c.useCase.CreateUser(context.Background(), receivedUUID, msg.Login); err != nil {
 			log.Printf("Error creating user: %v", err)
 		}
 		log.Printf("User with UUID %s successfully created", receivedUUID)

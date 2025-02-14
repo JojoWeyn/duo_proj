@@ -10,14 +10,13 @@ type Identity struct {
 	ID           int       `json:"id" gorm:"primaryKey"`
 	UserUUID     uuid.UUID `json:"user_uuid" gorm:"unique"`
 	Provider     string    `json:"provider"`
-	Login        string    `json:"login"`
 	Email        string    `json:"email"`
 	PasswordHash string    `json:"-"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-func NewIdentity(login, email, passwordHash string) (*Identity, error) {
+func NewIdentity(email, passwordHash string) (*Identity, error) {
 	if err := ValidateEmail(email); err != nil {
 		return nil, err
 	}
@@ -25,7 +24,6 @@ func NewIdentity(login, email, passwordHash string) (*Identity, error) {
 	return &Identity{
 		UserUUID:     uuid.New(),
 		Provider:     "local",
-		Login:        login,
 		Email:        email,
 		PasswordHash: passwordHash,
 		CreatedAt:    time.Now(),

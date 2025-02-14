@@ -12,7 +12,7 @@ type UserRepository interface {
 	FindByUUID(ctx context.Context, uuid uuid.UUID) (*entity.User, error)
 	Update(ctx context.Context, user *entity.User) error
 	Delete(ctx context.Context, uuid uuid.UUID) error
-	GetAll(ctx context.Context, uuid uuid.UUID) ([]*entity.User, error)
+	GetAll(ctx context.Context, limit, offset int) ([]*entity.User, error)
 }
 
 type UserUseCase struct {
@@ -25,8 +25,8 @@ func NewUserUseCase(userRepo UserRepository) *UserUseCase {
 	}
 }
 
-func (uc *UserUseCase) CreateUsers(ctx context.Context, uuid uuid.UUID) error {
-	user := entity.NewUser(uuid)
+func (uc *UserUseCase) CreateUser(ctx context.Context, uuid uuid.UUID, login string) error {
+	user := entity.NewUser(uuid, login)
 
 	return uc.userRepo.Create(ctx, user)
 }
@@ -35,8 +35,8 @@ func (uc *UserUseCase) GetUser(ctx context.Context, uuid uuid.UUID) (*entity.Use
 	return uc.userRepo.FindByUUID(ctx, uuid)
 }
 
-func (uc *UserUseCase) GetAllUser(ctx context.Context) ([]*entity.User, error) {
-	return uc.userRepo.GetAll(ctx, uuid.UUID{})
+func (uc *UserUseCase) GetAllUsers(ctx context.Context, limit, offset int) ([]*entity.User, error) {
+	return uc.userRepo.GetAll(ctx, limit, offset)
 }
 func (uc *UserUseCase) UpdateUser(ctx context.Context, uuid uuid.UUID, updateData *entity.User) error {
 	user, err := uc.userRepo.FindByUUID(ctx, uuid)
@@ -44,11 +44,25 @@ func (uc *UserUseCase) UpdateUser(ctx context.Context, uuid uuid.UUID, updateDat
 		return err
 	}
 
-	user.Name = updateData.Name
-	user.SecondName = updateData.SecondName
-	user.LastName = updateData.LastName
-	user.RankID = updateData.RankID
-	user.Avatar = updateData.Avatar
+	if updateData.Login != "" {
+		user.Login = updateData.Login
+	}
+
+	if updateData.Name != "" {
+		user.Name = updateData.Name
+	}
+	if updateData.SecondName != "" {
+		user.SecondName = updateData.SecondName
+	}
+	if updateData.LastName != "" {
+		user.LastName = updateData.LastName
+	}
+	if updateData.RankID != 0 {
+		user.RankID = updateData.RankID
+	}
+	if updateData.Avatar != "" {
+		user.Avatar = updateData.Avatar
+	}
 
 	return uc.userRepo.Update(ctx, user)
 }

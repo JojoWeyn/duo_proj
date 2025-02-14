@@ -42,9 +42,11 @@ func main() {
 	{
 		protected.POST("/auth/logout", proxy.ProxyIdentityService())
 		protected.GET("/auth/token/status", proxy.ProxyIdentityService())
+
 		protected.GET("/users/:uuid", proxy.ProxyUserService())
 		protected.PUT("/users/update", proxy.ProxyUserService())
-		protected.GET("/users", proxy.ProxyUserService())
+		protected.GET("/users/all", proxy.ProxyUserService())
+		protected.GET("/users/me", proxy.ProxyUserService())
 	}
 
 	port := getEnv("PORT", "3211")

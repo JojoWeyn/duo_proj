@@ -87,13 +87,9 @@ func (uc *IdentityUseCase) RefreshToken(ctx context.Context, refreshToken string
 	}, nil
 }
 
-func (uc *IdentityUseCase) Register(ctx context.Context, login, email, password string) error {
+func (uc *IdentityUseCase) Register(ctx context.Context, email, password string) error {
 	if _, err := uc.identityRepo.FindByEmail(ctx, email); err == nil {
 		return errors.New("email already exists")
-	}
-
-	if _, err := uc.identityRepo.FindByLogin(ctx, login); err == nil {
-		return errors.New("login already exists")
 	}
 
 	err := entity.ValidatePassword(password)
@@ -107,7 +103,6 @@ func (uc *IdentityUseCase) Register(ctx context.Context, login, email, password 
 	}
 
 	identity, err := entity.NewIdentity(
-		login,
 		email,
 		string(hashedPassword),
 	)
@@ -115,7 +110,7 @@ func (uc *IdentityUseCase) Register(ctx context.Context, login, email, password 
 		return err
 	}
 
-	if err := uc.producer.SendUserCreated(identity.UserUUID.String()); err != nil {
+	if err := uc.producer.SendUserCreated(identity.UserUUID.String(), email); err != nil {
 
 		log.Printf("Failed to send user created event: %v", err)
 	}
@@ -124,13 +119,13 @@ func (uc *IdentityUseCase) Register(ctx context.Context, login, email, password 
 
 }
 
-func (uc *IdentityUseCase) Login(ctx context.Context, login, password string) (*Tokens, error) {
-	identity, err := uc.identityRepo.FindByLogin(ctx, login)
+func (uc *IdentityUseCase) Login(ctx context.Context, email, password string) (*Tokens, error) {
+	identity, err := uc.identityRepo.FindByEmail(ctx, email)
 	if err != nil {
-		return nil, errors.New("invalid login or password")
+		return nil, errors.New("invalid email or password")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(identity.PasswordHash), []byte(password)); err != nil {
-		return nil, errors.New("invalid login or password")
+		return nil, errors.New("invalid email or password")
 	}
 	accessToken, refreshToken, err := uc.tokenService.GenerateTokenPair(identity.UserUUID.String())
 	if err != nil {

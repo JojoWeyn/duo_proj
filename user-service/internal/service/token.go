@@ -18,10 +18,8 @@ func NewTokenService(accessSecret string) *TokenService {
 func (s *TokenService) Validate(token string) (string, error) {
 	secret := s.accessSecret
 
-	// Объявляем claims для стандартных зарегистрированных полей
 	claims := &jwt.RegisteredClaims{}
 
-	// Парсим токен с проверкой подписи
 	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
 	})
@@ -33,7 +31,6 @@ func (s *TokenService) Validate(token string) (string, error) {
 		return "", fmt.Errorf("failed to parse token: %v", err)
 	}
 
-	// Проверка валидности токена
 	if !parsedToken.Valid {
 		return "", jwt.ErrSignatureInvalid
 	}

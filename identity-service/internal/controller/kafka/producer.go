@@ -12,7 +12,8 @@ type Producer struct {
 }
 
 type UserCreatedEvent struct {
-	UUID string `json:"uuid"`
+	UUID  string `json:"uuid"`
+	Login string `json:"login"`
 }
 
 func NewProducer(brokers, topic string) (*Producer, error) {
@@ -30,9 +31,10 @@ func NewProducer(brokers, topic string) (*Producer, error) {
 	}, nil
 }
 
-func (p *Producer) SendUserCreated(uuid string) error {
+func (p *Producer) SendUserCreated(uuid, login string) error {
 	event := UserCreatedEvent{
-		UUID: uuid,
+		UUID:  uuid,
+		Login: login,
 	}
 
 	value, err := json.Marshal(event)

@@ -8,6 +8,7 @@ import (
 
 type User struct {
 	UUID       uuid.UUID `json:"uuid" gorm:"unique;type:uuid;primaryKey"`
+	Login      string    `json:"login"`
 	Name       string    `json:"name"`
 	SecondName string    `json:"second_name"`
 	LastName   string    `json:"last_name"`
@@ -18,9 +19,10 @@ type User struct {
 	Avatar     string    `json:"avatar"`
 }
 
-func NewUser(userUUID uuid.UUID) *User {
+func NewUser(userUUID uuid.UUID, login string) *User {
 	return &User{
 		UUID:      userUUID,
+		Login:     login,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		RankID:    1,

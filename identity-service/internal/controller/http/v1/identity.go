@@ -15,8 +15,8 @@ type TokenRepository interface {
 }
 
 type IdentityUsecase interface {
-	Register(ctx context.Context, login, email, password string) error
-	Login(ctx context.Context, login, password string) (*usecase.Tokens, error)
+	Register(ctx context.Context, email, password string) error
+	Login(ctx context.Context, email, password string) (*usecase.Tokens, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*usecase.Tokens, error)
 	Logout(ctx context.Context, token string) error
 	ValidateToken(ctx context.Context, token string, isRefreshToken bool) (string, error)
@@ -45,6 +45,7 @@ func newIdentityRoutes(handler *gin.RouterGroup, identityUsecase IdentityUsecase
 
 func (r *identityRoutes) checkToken(c *gin.Context) {
 	token := c.GetHeader("Authorization")
+
 	if token == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "no token provided"})
 		return
@@ -52,17 +53,24 @@ func (r *identityRoutes) checkToken(c *gin.Context) {
 
 	token = strings.TrimPrefix(token, "Bearer ")
 
-	isBlacklisted, err := r.identityUsecase.ValidateToken(c.Request.Context(), token, false)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	validateToken := func(token string, checkRefresh bool) (string, error) {
+		isBlacklisted, err := r.identityUsecase.ValidateToken(c.Request.Context(), token, checkRefresh)
+		if err != nil {
+			return "", err
+		}
+		return isBlacklisted, nil
 	}
 
-	if isBlacklisted != "" {
-		c.JSON(http.StatusOK, dto.TokenStatusResponse{
-			IsBlacklisted: "false",
-		})
+	isBlacklisted, err := validateToken(token, false)
+	if err != nil {
+		isBlacklisted, err = validateToken(token, true)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 	}
+
+	c.JSON(http.StatusOK, gin.H{"token_blacklisted": isBlacklisted})
 }
 
 func (r *identityRoutes) register(c *gin.Context) {
@@ -73,7 +81,7 @@ func (r *identityRoutes) register(c *gin.Context) {
 		return
 	}
 
-	err := r.identityUsecase.Register(c.Request.Context(), req.Login, req.Email, req.Password)
+	err := r.identityUsecase.Register(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -89,7 +97,7 @@ func (r *identityRoutes) login(c *gin.Context) {
 		return
 	}
 
-	tokens, err := r.identityUsecase.Login(c.Request.Context(), req.Login, req.Password)
+	tokens, err := r.identityUsecase.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
