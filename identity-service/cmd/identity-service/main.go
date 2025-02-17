@@ -34,8 +34,8 @@ func main() {
 	}
 
 	identityComposite, err := composite.NewIdentityComposite(db, composite.Config{
-		AccessTokenTTL:  time.Duration(getEnvAsInt("ACCESS_TOKEN_TTL", 15)) * time.Hour,
-		RefreshTokenTTL: time.Duration(getEnvAsInt("REFRESH_TOKEN_TTL", 24)) * time.Hour,
+		AccessTokenTTL:  time.Duration(getEnvAsInt("ACCESS_TOKEN_TTL", 15)) * time.Minute,
+		RefreshTokenTTL: time.Duration(getEnvAsInt("REFRESH_TOKEN_TTL", 24)) * time.Minute,
 		SigningKey:      getEnv("JWT_SIGNING_KEY", "your-signing-key"),
 		RefreshKey:      getEnv("JWT_REFRESH_KEY", "your-refresh-key"),
 		GatewayURL:      getEnv("GATEWAY_URL", "176.109.108.209:3211"),

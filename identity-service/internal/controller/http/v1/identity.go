@@ -69,8 +69,11 @@ func (r *identityRoutes) checkToken(c *gin.Context) {
 			return
 		}
 	}
-
-	c.JSON(http.StatusOK, gin.H{"token_blacklisted": isBlacklisted})
+	if isBlacklisted == "" {
+		c.JSON(http.StatusOK, gin.H{"is_blacklisted": "true"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"is_blacklisted": "false"})
 }
 
 func (r *identityRoutes) register(c *gin.Context) {

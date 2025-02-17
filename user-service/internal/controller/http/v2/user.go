@@ -1,4 +1,4 @@
-package v1
+package v2
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type UserUseCase interface {
@@ -122,6 +123,10 @@ func (r *userRoutes) updateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	updateData.UUID = uuid.MustParse(sub)
+	updateData.RankID = 0
+	updateData.CreatedAt = time.Time{}
 
 	if err := r.uc.UpdateUser(c.Request.Context(), uuid.MustParse(sub), &updateData); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
