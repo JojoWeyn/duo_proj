@@ -34,7 +34,8 @@ func main() {
 		public.POST("/auth/register", proxy.ProxyIdentityService())
 		public.POST("/auth/login", proxy.ProxyIdentityService())
 		public.POST("/auth/refresh", middleware.RateLimitMiddleware(refreshLimiter), proxy.ProxyIdentityService())
-
+		public.POST("/auth/password/reset", proxy.ProxyIdentityService())
+		public.POST("/auth/verification/code", proxy.ProxyIdentityService())
 	}
 
 	protected := router.Group("/v1")

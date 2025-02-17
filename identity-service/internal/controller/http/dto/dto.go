@@ -22,3 +22,9 @@ type TokenResponse struct {
 type TokenStatusResponse struct {
 	IsBlacklisted string `json:"is_blacklisted"`
 }
+
+type PasswordResetRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	NewPassword string `json:"new_password" binding:"required"`
+	Code        string `json:"code" binding:"required"`
+}

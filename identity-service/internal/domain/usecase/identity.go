@@ -119,6 +119,33 @@ func (uc *IdentityUseCase) Register(ctx context.Context, email, password string)
 
 }
 
+func (uc *IdentityUseCase) VerifyCode(ctx context.Context, email, code string) (bool, error) {
+	identity, err := uc.identityRepo.FindByEmail(ctx, email)
+	if err != nil {
+		return false, errors.New("user not found")
+	}
+	if identity.VerificationCode != code {
+		return false, errors.New("invalid verification code")
+	}
+
+	identity.RemoveVerificationCode()
+	if err := uc.identityRepo.Update(ctx, identity); err != nil {
+		return false, err
+	}
+	return true, nil
+
+}
+
+func (uc *IdentityUseCase) AddVerificationCode(ctx context.Context, email, code string) error {
+	identity, err := uc.identityRepo.FindByEmail(ctx, email)
+	if err != nil {
+		return errors.New("user not found")
+	}
+	identity.AddVerificationCode(code)
+
+	return uc.identityRepo.Update(ctx, identity)
+}
+
 func (uc *IdentityUseCase) Login(ctx context.Context, email, password string) (*Tokens, error) {
 	identity, err := uc.identityRepo.FindByEmail(ctx, email)
 	if err != nil {
@@ -135,4 +162,24 @@ func (uc *IdentityUseCase) Login(ctx context.Context, email, password string) (*
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
+}
+
+func (uc *IdentityUseCase) ResetPassword(ctx context.Context, email, newPassword string) error {
+	identity, err := uc.identityRepo.FindByEmail(ctx, email)
+	if err != nil {
+		return errors.New("email not found")
+	}
+
+	err = entity.ValidatePassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	identity.UpdatePassword(string(hashedPassword))
+	return uc.identityRepo.Update(ctx, identity)
 }

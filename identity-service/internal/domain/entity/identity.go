@@ -7,13 +7,14 @@ import (
 )
 
 type Identity struct {
-	ID           int       `json:"id" gorm:"primaryKey"`
-	UserUUID     uuid.UUID `json:"user_uuid" gorm:"unique"`
-	Provider     string    `json:"provider"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"-"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID               int       `json:"id" gorm:"primaryKey"`
+	UserUUID         uuid.UUID `json:"user_uuid" gorm:"unique"`
+	Provider         string    `json:"provider"`
+	Email            string    `json:"email"`
+	PasswordHash     string    `json:"-"`
+	VerificationCode string    "json:verification_code"
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 func NewIdentity(email, passwordHash string) (*Identity, error) {
@@ -48,4 +49,12 @@ func (i *Identity) UpdatePassword(passwordHash string) {
 
 func (i *Identity) ComparePassword(password string) bool {
 	return i.PasswordHash == password
+}
+
+func (i *Identity) AddVerificationCode(code string) {
+	i.VerificationCode = code
+}
+
+func (i *Identity) RemoveVerificationCode() {
+	i.VerificationCode = ""
 }

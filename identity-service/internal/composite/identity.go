@@ -42,6 +42,8 @@ func NewIdentityComposite(db *gorm.DB, cfg Config) (*IdentityComposite, error) {
 		tokenRepo,
 	)
 
+	verificationService := service.NewVerificationService()
+
 	producer, err := kafka.NewProducer(cfg.KafkaBrokers, "user_create")
 	if err != nil {
 		return nil, err
@@ -56,7 +58,7 @@ func NewIdentityComposite(db *gorm.DB, cfg Config) (*IdentityComposite, error) {
 
 	handler := gin.Default()
 
-	v1.NewRouter(handler, identityUseCase, tokenRepo, cfg.GatewayURL)
+	v1.NewRouter(handler, verificationService, identityUseCase, tokenRepo, cfg.GatewayURL)
 
 	return &IdentityComposite{
 		handler: handler,
