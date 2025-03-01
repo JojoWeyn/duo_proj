@@ -11,12 +11,7 @@ type Producer struct {
 	topic    string
 }
 
-type UserCreatedEvent struct {
-	UUID  string `json:"uuid"`
-	Login string `json:"login"`
-}
-
-type UserLoginEvent struct {
+type UserEvent struct {
 	UUID   string `json:"uuid"`
 	Login  string `json:"login"`
 	Action string `json:"action"`
@@ -25,6 +20,7 @@ type UserLoginEvent struct {
 func NewProducer(brokers, topic string) (*Producer, error) {
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true
+	config.Producer.RequiredAcks = sarama.WaitForAll
 
 	producer, err := sarama.NewSyncProducer([]string{brokers}, config)
 	if err != nil {
@@ -37,31 +33,11 @@ func NewProducer(brokers, topic string) (*Producer, error) {
 	}, nil
 }
 
-func (p *Producer) SendUserCreated(uuid, login string) error {
-	event := UserCreatedEvent{
-		UUID:  uuid,
-		Login: login,
-	}
-
-	value, err := json.Marshal(event)
-	if err != nil {
-		return err
-	}
-
-	msg := &sarama.ProducerMessage{
-		Topic: p.topic,
-		Value: sarama.ByteEncoder(value),
-	}
-
-	_, _, err = p.producer.SendMessage(msg)
-	return err
-}
-
-func (p *Producer) SendUserLogin(uuid, login string) error {
-	event := UserLoginEvent{
+func (p *Producer) SendUserEvent(uuid, login, action string) error {
+	event := UserEvent{
 		UUID:   uuid,
 		Login:  login,
-		Action: "login",
+		Action: action,
 	}
 
 	value, err := json.Marshal(event)

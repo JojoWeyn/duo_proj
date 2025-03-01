@@ -48,6 +48,9 @@ func main() {
 		protected.GET("/users/all", proxy.ProxyUserService())
 		protected.GET("/users/me", proxy.ProxyUserService())
 		protected.PATCH("/users/me", proxy.ProxyUserService())
+		protected.POST("/users/me/avatar", proxy.ProxyUserService())
+		protected.GET("/users/achievements/:uuid", proxy.ProxyUserService())
+		protected.GET("/achievements/list", proxy.ProxyUserService())
 	}
 
 	port := getEnv("PORT", "3211")

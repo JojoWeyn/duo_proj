@@ -2,6 +2,9 @@ package usecase
 
 import (
 	"context"
+	"fmt"
+	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/kafka"
+	"mime/multipart"
 
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/google/uuid"
@@ -15,13 +18,21 @@ type UserRepository interface {
 	GetAll(ctx context.Context, limit, offset int) ([]*entity.User, error)
 }
 
-type UserUseCase struct {
-	userRepo UserRepository
+type StorageS3 interface {
+	UploadAvatar(ctx context.Context, avatarFile multipart.File, fileName string, fileSize int64) (string, error)
 }
 
-func NewUserUseCase(userRepo UserRepository) *UserUseCase {
+type UserUseCase struct {
+	userRepo UserRepository
+	s3       StorageS3
+	producer *kafka.Producer
+}
+
+func NewUserUseCase(userRepo UserRepository, s3 StorageS3, producer *kafka.Producer) *UserUseCase {
 	return &UserUseCase{
 		userRepo: userRepo,
+		s3:       s3,
+		producer: producer,
 	}
 }
 
@@ -47,7 +58,6 @@ func (uc *UserUseCase) UpdateUser(ctx context.Context, uuid uuid.UUID, updateDat
 	if updateData.Login != "" {
 		user.Login = updateData.Login
 	}
-
 	if updateData.Name != "" {
 		user.Name = updateData.Name
 	}
@@ -57,16 +67,39 @@ func (uc *UserUseCase) UpdateUser(ctx context.Context, uuid uuid.UUID, updateDat
 	if updateData.LastName != "" {
 		user.LastName = updateData.LastName
 	}
-	if updateData.RankID != 0 {
-		user.RankID = updateData.RankID
+
+	if err := user.Validate(); err != nil {
+		return err
 	}
-	if updateData.Avatar != "" {
-		user.Avatar = updateData.Avatar
+
+	err = uc.producer.SendUserEvent(user.UUID.String(), user.Login, "update")
+	if err != nil {
+		return fmt.Errorf("failed to produce message: %w", err)
 	}
 
 	return uc.userRepo.Update(ctx, user)
 }
-
 func (uc *UserUseCase) DeleteUser(ctx context.Context, uuid uuid.UUID) error {
 	return uc.userRepo.Delete(ctx, uuid)
+}
+
+func (uc *UserUseCase) UpdateAvatar(ctx context.Context, userID uuid.UUID, avatarFile multipart.File, fileSize int64) (string, error) {
+	fileName := fmt.Sprintf("%s_avatar.%s", userID, "png")
+
+	avatarURL, err := uc.s3.UploadAvatar(ctx, avatarFile, fileName, fileSize)
+	if err != nil {
+		return "", fmt.Errorf("failed to upload avatar: %w", err)
+	}
+
+	user, err := uc.userRepo.FindByUUID(ctx, userID)
+	if err != nil {
+		return "", fmt.Errorf("failed to find user: %w", err)
+	}
+
+	user.Avatar = avatarURL
+	if err := uc.userRepo.Update(ctx, user); err != nil {
+		return "", fmt.Errorf("failed to update user avatar: %w", err)
+	}
+
+	return avatarURL, nil
 }

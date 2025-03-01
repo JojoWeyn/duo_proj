@@ -2,7 +2,9 @@ package composite
 
 import (
 	v1 "github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/v1"
+	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/kafka"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/service"
+	"github.com/JojoWeyn/duo-proj/user-service/pkg/client/s3"
 	"log"
 
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
@@ -17,11 +19,16 @@ type Config struct {
 	KafkaTopic   string
 	GatewayURL   string
 	Secret       string
+	S3Endpoint   string
+	S3AccessKey  string
+	S3SecretKey  string
+	S3Bucket     string
 }
 
 type UserComposite struct {
-	handler     *gin.Engine
-	UserUseCase *usecase.UserUseCase
+	handler            *gin.Engine
+	UserUseCase        *usecase.UserUseCase
+	AchievementUseCase *usecase.AchievementUseCase
 }
 
 func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
@@ -42,16 +49,47 @@ func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
 		log.Println("Default ranks added")
 	}
 
+	if err := db.AutoMigrate(&entity.Achievement{}, &entity.UserAchievementProgress{}); err != nil {
+		return nil, err
+	}
+	db.Model(&entity.Achievement{}).Count(&count)
+	if count == 0 {
+		achievements := []entity.Achievement{
+			{ID: 1, Title: "Обновки", Description: "Обновить данные профиля", Condition: `{"action": "update"}`},
+			{ID: 2, Title: "Вхождение", Description: "3 раза войти в аккаунт", Condition: `{"action": "login", "count": 3}`},
+		}
+
+		if err := db.Create(&achievements).Error; err != nil {
+			log.Printf("Failed to add default achievements: %v", err)
+		}
+		log.Println("Default achievements added")
+	}
+
 	userRepo := postgres.NewUserRepository(db)
-	UserUseCase := usecase.NewUserUseCase(userRepo)
+	achievementRepo := postgres.NewAchievementRepository(db)
+
+	s3Client, err := s3.NewS3Client(cfg.S3Endpoint, cfg.S3AccessKey, cfg.S3SecretKey, cfg.S3Bucket)
+	if err != nil {
+		log.Printf("Failed to create S3 client: %v", err)
+	}
+
+	producer, err := kafka.NewProducer(cfg.KafkaBrokers, "user_create")
+	if err != nil {
+		return nil, err
+	}
+
+	UserUseCase := usecase.NewUserUseCase(userRepo, s3Client, producer)
+	AchievementUseCase := usecase.NewAchievementUseCase(achievementRepo)
+
 	TokenService := service.NewTokenService(cfg.Secret)
 
 	handler := gin.Default()
-	v1.NewRouter(handler, UserUseCase, TokenService, cfg.GatewayURL)
+	v1.NewRouter(handler, UserUseCase, AchievementUseCase, TokenService, cfg.GatewayURL)
 
 	return &UserComposite{
-		handler:     handler,
-		UserUseCase: UserUseCase,
+		handler:            handler,
+		UserUseCase:        UserUseCase,
+		AchievementUseCase: AchievementUseCase,
 	}, nil
 }
 

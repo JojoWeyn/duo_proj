@@ -5,6 +5,7 @@ import (
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,6 +16,7 @@ type UserUseCase interface {
 	UpdateUser(ctx context.Context, uuid uuid.UUID, user *entity.User) error
 	DeleteUser(ctx context.Context, uuid uuid.UUID) error
 	GetAllUsers(ctx context.Context, limit, offset int) ([]*entity.User, error)
+	UpdateAvatar(ctx context.Context, userID uuid.UUID, avatarFile multipart.File, fileSize int64) (string, error)
 }
 
 type TokenService interface {
@@ -39,6 +41,7 @@ func newUserRoutes(handler *gin.RouterGroup, uc UserUseCase, ts TokenService) {
 		users.DELETE("/delete", r.deleteUser)
 		users.GET("/all", r.getAllUsers)
 		users.GET("/me", r.getMe)
+		users.POST("/me/avatar", r.updateAvatar)
 	}
 }
 
@@ -124,7 +127,7 @@ func (r *userRoutes) updateUser(c *gin.Context) {
 	}
 
 	if err := r.uc.UpdateUser(c.Request.Context(), uuid.MustParse(sub), &updateData); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -144,4 +147,40 @@ func (r *userRoutes) deleteUser(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
+}
+
+func (r *userRoutes) updateAvatar(c *gin.Context) {
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no token provided"})
+		return
+	}
+	token = strings.TrimPrefix(token, "Bearer ")
+
+	sub, err := r.ts.Validate(token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	fileSize := file.Size
+	avatarFile, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open avatar file"})
+		return
+	}
+	defer avatarFile.Close()
+
+	avatarURL, err := r.uc.UpdateAvatar(c.Request.Context(), uuid.MustParse(sub), avatarFile, fileSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update avatar on storage"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"avatar_url": avatarURL})
 }

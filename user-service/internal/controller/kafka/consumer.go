@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -16,19 +17,25 @@ type userUseCase interface {
 	CreateUser(ctx context.Context, uuid uuid.UUID, Login string) error
 }
 
-type SaramaConsumerGroup struct {
-	brokers     []string
-	topic       string
-	groupID     string
-	userUsecase userUseCase
+type achievementUseCase interface {
+	CheckAchievements(ctx context.Context, userID uuid.UUID, action string) error
 }
 
-func NewSaramaConsumerGroup(userUsecase userUseCase, brokers []string, topic, groupID string) *SaramaConsumerGroup {
+type SaramaConsumerGroup struct {
+	brokers            []string
+	topic              string
+	groupID            string
+	userUsecase        userUseCase
+	achievementUsecase achievementUseCase
+}
+
+func NewSaramaConsumerGroup(userUsecase userUseCase, achievementUsecase achievementUseCase, brokers []string, topic, groupID string) *SaramaConsumerGroup {
 	return &SaramaConsumerGroup{
-		brokers:     brokers,
-		topic:       topic,
-		groupID:     groupID,
-		userUsecase: userUsecase,
+		brokers:            brokers,
+		topic:              topic,
+		groupID:            groupID,
+		userUsecase:        userUsecase,
+		achievementUsecase: achievementUsecase,
 	}
 }
 
@@ -47,7 +54,7 @@ func (c *SaramaConsumerGroup) Start(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	consumer := ConsumerGroupHandler{useCase: c.userUsecase}
+	consumer := ConsumerGroupHandler{userUseCase: c.userUsecase, achievementUsecase: c.achievementUsecase}
 
 	go func() {
 		for {
@@ -72,18 +79,30 @@ func (c *SaramaConsumerGroup) Start(ctx context.Context) {
 }
 
 type ConsumerGroupHandler struct {
-	useCase userUseCase
+	userUseCase        userUseCase
+	achievementUsecase achievementUseCase
 }
 
 func (ConsumerGroupHandler) Setup(_ sarama.ConsumerGroupSession) error   { return nil }
 func (ConsumerGroupHandler) Cleanup(_ sarama.ConsumerGroupSession) error { return nil }
 func (c ConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+	if c.userUseCase == nil {
+		log.Println("Error: userUseCase is nil")
+		return fmt.Errorf("userUseCase is nil")
+	}
+
+	if c.achievementUsecase == nil {
+		log.Println("Error: achievementUsecase is nil")
+		return fmt.Errorf("achievementUsecase is nil")
+	}
+
 	for message := range claim.Messages() {
 		log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
 
 		var msg struct {
-			UUID  string `json:"uuid"`
-			Login string `json:"login"`
+			UUID   string `json:"uuid"`
+			Login  string `json:"login"`
+			Action string `json:"action"`
 		}
 
 		if err := json.Unmarshal(message.Value, &msg); err != nil {
@@ -96,10 +115,20 @@ func (c ConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, 
 			log.Printf("Invalid UUID format: %v", err)
 			continue
 		}
-		if err := c.useCase.CreateUser(context.Background(), receivedUUID, msg.Login); err != nil {
-			log.Printf("Error creating user: %v", err)
+
+		if msg.Action == "" {
+			if err := c.userUseCase.CreateUser(context.Background(), receivedUUID, msg.Login); err != nil {
+				log.Printf("Error creating user: %v", err)
+			} else {
+				log.Printf("User with UUID %s successfully created", receivedUUID)
+			}
+		} else {
+			err := c.achievementUsecase.CheckAchievements(context.Background(), receivedUUID, msg.Action)
+			if err != nil {
+				log.Printf("Error checking achievements: %v", err)
+			}
 		}
-		log.Printf("User with UUID %s successfully created", receivedUUID)
+
 		session.MarkMessage(message, "")
 	}
 	return nil

@@ -35,9 +35,14 @@ func main() {
 		KafkaTopic:   getEnv("KAFKA_TOPIC", "user_create"),
 		GatewayURL:   getEnv("GATEWAY_URL", "176.109.108.209:3211"),
 		Secret:       getEnv("JWT_SIGNING_KEY", "your-signing-key"),
+		S3Endpoint:   getEnv("S3_ENDPOINT", "minio:9000"),
+		S3AccessKey:  getEnv("S3_ACCESS_KEY", "minio"),
+		S3SecretKey:  getEnv("S3_SECRET_KEY", "minio123"),
+		S3Bucket:     getEnv("S3_BUCKET", "user-avatar"),
 	}
 
 	app, err := composite.NewUserComposite(db, cfg)
+
 	if err != nil {
 		log.Fatal("Failed to create application:", err)
 	}
@@ -45,7 +50,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	consumer := kafka.NewSaramaConsumerGroup(app.UserUseCase, []string{cfg.KafkaBrokers}, cfg.KafkaTopic, "user-service-group")
+	consumer := kafka.NewSaramaConsumerGroup(app.UserUseCase, app.AchievementUseCase, []string{cfg.KafkaBrokers}, cfg.KafkaTopic, "user-service-group")
 	go consumer.Start(ctx)
 
 	port := getEnv("USER_PORT", "8082")

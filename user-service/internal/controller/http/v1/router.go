@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(handler *gin.Engine, uc UserUseCase, ts TokenService, gatewayUrl string) {
+func NewRouter(handler *gin.Engine, userUseCase UserUseCase, achievementUseCase AchievementUseCase, ts TokenService, gatewayUrl string) {
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{gatewayUrl}
 	config.AllowMethods = []string{"GET", "PUT", "DELETE", "OPTIONS"}
@@ -17,6 +17,7 @@ func NewRouter(handler *gin.Engine, uc UserUseCase, ts TokenService, gatewayUrl 
 
 	v1 := handler.Group("/v1")
 	{
-		newUserRoutes(v1, uc, ts)
+		newUserRoutes(v1, userUseCase, ts)
+		newAchievementRoutes(v1, achievementUseCase)
 	}
 }

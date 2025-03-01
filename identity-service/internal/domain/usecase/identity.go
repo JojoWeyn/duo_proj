@@ -158,10 +158,17 @@ func (uc *IdentityUseCase) Login(ctx context.Context, email, password string) (*
 	if err != nil {
 		return nil, err
 	}
+
+	if err := uc.producer.SendUserLogin(identity.UserUUID.String(), email); err != nil {
+
+		log.Printf("Failed to send user login event: %v", err)
+	}
+
 	return &Tokens{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
+
 }
 
 func (uc *IdentityUseCase) ResetPassword(ctx context.Context, email, newPassword string) error {
