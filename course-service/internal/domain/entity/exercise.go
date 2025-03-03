@@ -12,3 +12,15 @@ type Exercise struct {
 	Lesson      Lesson     `json:"lesson" gorm:"foreignKey:LessonUUID;references:UUID"`
 	Questions   []Question `json:"questions" gorm:"foreignKey:ExerciseUUID;constraint:OnDelete:CASCADE"`
 }
+
+func NewExercise(title, description string, points, order int, lessonUUID uuid.UUID) *Exercise {
+	return &Exercise{
+		UUID:        uuid.New(),
+		Title:       title,
+		Description: description,
+		Points:      points,
+		Order:       order,
+		LessonUUID:  lessonUUID,
+		Questions:   []Question{},
+	}
+}

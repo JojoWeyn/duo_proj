@@ -10,3 +10,13 @@ type Course struct {
 	CourseType  CourseType `json:"course_type" gorm:"foreignKey:TypeID;references:ID"`
 	Lessons     []Lesson   `json:"lessons" gorm:"foreignKey:CourseUUID;constraint:OnDelete:CASCADE"`
 }
+
+func NewCourse(title, description string, typeID int) *Course {
+	return &Course{
+		UUID:        uuid.New(),
+		Title:       title,
+		Description: description,
+		TypeID:      typeID,
+		Lessons:     []Lesson{},
+	}
+}
