@@ -1,0 +1,53 @@
+package v1
+
+import (
+	"context"
+	"github.com/JojoWeyn/duo-proj/course-service/internal/domain/entity"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"net/http"
+)
+
+type LessonUseCase interface {
+	CreateLesson(ctx context.Context, title, description string, difficultyID, order int, courseUUID uuid.UUID) error
+	GetLessonByID(ctx context.Context, id uuid.UUID) (*entity.Lesson, error)
+	GetLessonsByCourseID(ctx context.Context, courseID uuid.UUID) ([]*entity.Lesson, error)
+	UpdateLesson(ctx context.Context, lesson *entity.Lesson) error
+	DeleteLesson(ctx context.Context, id uuid.UUID) error
+}
+
+type lessonRoutes struct {
+	lessonUseCase LessonUseCase
+}
+
+func newLessonRoutes(handler *gin.RouterGroup, lessonUseCase LessonUseCase) {
+	r := &lessonRoutes{
+		lessonUseCase: lessonUseCase,
+	}
+
+	h := handler.Group("")
+	{
+		h.GET("/lesson/:id/info", r.getLessonByID)
+		h.GET("/course/:id/content", r.getAllLessons)
+	}
+}
+
+func (r *lessonRoutes) getLessonByID(c *gin.Context) {
+	id := c.Param("id")
+	lesson, err := r.lessonUseCase.GetLessonByID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(http.StatusOK, lesson)
+}
+
+func (r *lessonRoutes) getAllLessons(c *gin.Context) {
+	id := c.Param("id")
+	lessons, err := r.lessonUseCase.GetLessonsByCourseID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(http.StatusOK, lessons)
+}

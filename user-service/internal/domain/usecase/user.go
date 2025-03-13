@@ -18,17 +18,17 @@ type UserRepository interface {
 	GetAll(ctx context.Context, limit, offset int) ([]*entity.User, error)
 }
 
-type StorageS3 interface {
+type UserS3Repo interface {
 	UploadAvatar(ctx context.Context, avatarFile multipart.File, fileName string, fileSize int64) (string, error)
 }
 
 type UserUseCase struct {
 	userRepo UserRepository
-	s3       StorageS3
+	s3       UserS3Repo
 	producer *kafka.Producer
 }
 
-func NewUserUseCase(userRepo UserRepository, s3 StorageS3, producer *kafka.Producer) *UserUseCase {
+func NewUserUseCase(userRepo UserRepository, s3 UserS3Repo, producer *kafka.Producer) *UserUseCase {
 	return &UserUseCase{
 		userRepo: userRepo,
 		s3:       s3,

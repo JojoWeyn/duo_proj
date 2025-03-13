@@ -17,27 +17,32 @@ func NewExerciseRepository(db *gorm.DB) *ExerciseRepository {
 	}
 }
 
-func (e ExerciseRepository) Create(ctx context.Context, course *entity.Exercise) error {
-	//TODO implement me
-	panic("implement me")
+func (e *ExerciseRepository) Create(ctx context.Context, course *entity.Exercise) error {
+	return e.db.WithContext(ctx).Create(course).Error
 }
 
-func (e ExerciseRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Exercise, error) {
-	//TODO implement me
-	panic("implement me")
+func (e *ExerciseRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Exercise, error) {
+	var exercise entity.Exercise
+
+	if err := e.db.WithContext(ctx).Where("uuid = ?", id).First(&exercise).Error; err != nil {
+		return nil, err
+	}
+	return &exercise, nil
 }
 
-func (e ExerciseRepository) GetByLessonID(ctx context.Context, lessonID uuid.UUID) ([]entity.Exercise, error) {
-	//TODO implement me
-	panic("implement me")
+func (e *ExerciseRepository) GetByLessonID(ctx context.Context, lessonID uuid.UUID) ([]*entity.Exercise, error) {
+	var exercises []*entity.Exercise
+
+	if err := e.db.WithContext(ctx).Where("lesson_uuid = ?", lessonID).Find(&exercises).Error; err != nil {
+		return nil, err
+	}
+	return exercises, nil
 }
 
-func (e ExerciseRepository) Update(ctx context.Context, course *entity.Exercise) error {
-	//TODO implement me
-	panic("implement me")
+func (e *ExerciseRepository) Update(ctx context.Context, course *entity.Exercise) error {
+	return e.db.WithContext(ctx).Save(course).Error
 }
 
-func (e ExerciseRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	//TODO implement me
-	panic("implement me")
+func (e *ExerciseRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return e.db.WithContext(ctx).Delete(&entity.Exercise{UUID: id}).Error
 }

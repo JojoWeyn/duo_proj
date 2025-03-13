@@ -3,13 +3,13 @@ package composite
 import (
 	v1 "github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/v1"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/kafka"
-	"github.com/JojoWeyn/duo-proj/user-service/internal/service"
 	"github.com/JojoWeyn/duo-proj/user-service/pkg/client/s3"
 	"log"
 
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/usecase"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/repository/db/postgres"
+	s3Repo "github.com/JojoWeyn/duo-proj/user-service/internal/repository/db/s3"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -64,11 +64,12 @@ func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
 		}
 		log.Println("Default achievements added")
 	}
+	s3Client, err := s3.NewS3Client(cfg.S3Endpoint, cfg.S3AccessKey, cfg.S3SecretKey, cfg.S3Bucket)
 
 	userRepo := postgres.NewUserRepository(db)
+	userS3Repo := s3Repo.NewUserS3Repository(s3Client)
 	achievementRepo := postgres.NewAchievementRepository(db)
 
-	s3Client, err := s3.NewS3Client(cfg.S3Endpoint, cfg.S3AccessKey, cfg.S3SecretKey, cfg.S3Bucket)
 	if err != nil {
 		log.Printf("Failed to create S3 client: %v", err)
 	}
@@ -78,13 +79,11 @@ func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
 		return nil, err
 	}
 
-	UserUseCase := usecase.NewUserUseCase(userRepo, s3Client, producer)
+	UserUseCase := usecase.NewUserUseCase(userRepo, userS3Repo, producer)
 	AchievementUseCase := usecase.NewAchievementUseCase(achievementRepo)
 
-	TokenService := service.NewTokenService(cfg.Secret)
-
 	handler := gin.Default()
-	v1.NewRouter(handler, UserUseCase, AchievementUseCase, TokenService, cfg.GatewayURL)
+	v1.NewRouter(handler, UserUseCase, AchievementUseCase, cfg.GatewayURL)
 
 	return &UserComposite{
 		handler:            handler,

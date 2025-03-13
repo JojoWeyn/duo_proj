@@ -2,8 +2,11 @@ package usecase
 
 import (
 	"context"
+	"errors"
+	"github.com/JojoWeyn/duo-proj/course-service/internal/controller/kafka"
 	"github.com/JojoWeyn/duo-proj/course-service/internal/domain/entity"
 	"github.com/google/uuid"
+	"log"
 )
 
 type QuestionRepository interface {
@@ -15,13 +18,112 @@ type QuestionRepository interface {
 }
 
 type QuestionUseCase struct {
-	repo QuestionRepository
+	repo     QuestionRepository
+	producer *kafka.Producer
 }
 
-func NewQuestionUseCase(repo QuestionRepository) *QuestionUseCase {
+func NewQuestionUseCase(repo QuestionRepository, producer *kafka.Producer) *QuestionUseCase {
 	return &QuestionUseCase{
-		repo: repo,
+		repo:     repo,
+		producer: producer,
 	}
+}
+
+func (q *QuestionUseCase) CheckAnswer(ctx context.Context, userUUID, questionID uuid.UUID, userAnswers interface{}) (bool, error) {
+	question, err := q.repo.GetByID(ctx, questionID)
+	if err != nil {
+		return false, err
+	}
+
+	isCorrect, err := func() (bool, error) {
+		switch question.TypeID {
+		case 1: // Single Choice
+			userAnswerUUID, ok := userAnswers.(string)
+			if !ok {
+				return false, errors.New("1invalid answer format")
+			}
+			for _, option := range question.QuestionOptions {
+				if option.IsCorrect && option.UUID == uuid.MustParse(userAnswerUUID) {
+					return true, nil
+				}
+			}
+			return false, nil
+
+		case 2: // Multiple Choice
+			userAnswerUUIDs, ok := userAnswers.([]interface{})
+			if !ok {
+				return false, errors.New("2invalid answer format")
+			}
+
+			var answers []uuid.UUID
+			for _, a := range userAnswerUUIDs {
+				answerStr, ok := a.(string)
+				if !ok {
+					return false, errors.New("2invalid answer format")
+				}
+				answers = append(answers, uuid.MustParse(answerStr))
+			}
+
+			correctAnswers := make(map[uuid.UUID]bool)
+			for _, option := range question.QuestionOptions {
+				if option.IsCorrect {
+					correctAnswers[option.UUID] = true
+				}
+			}
+			if len(correctAnswers) != len(answers) {
+				return false, nil
+			}
+
+			for _, answer := range answers {
+				if !correctAnswers[answer] {
+					return false, nil
+				}
+			}
+			return true, nil
+
+		case 3: // Matching
+			userPairs, ok := userAnswers.(map[string]interface{}) // map[left] = right
+			if !ok {
+				return false, errors.New("3 invalid answer format")
+			}
+
+			userAnswerMap := make(map[string]string)
+			for left, right := range userPairs {
+				rightStr, ok := right.(string)
+				if !ok {
+					return false, errors.New("3 invalid answer format")
+				}
+				userAnswerMap[left] = rightStr
+			}
+
+			correctPairs := make(map[string]string)
+			for _, pair := range question.MatchingPairs {
+				correctPairs[pair.LeftText] = pair.RightText
+			}
+			if len(correctPairs) != len(userAnswerMap) {
+				return false, nil
+			}
+			for left, right := range userAnswerMap {
+				if correctPairs[left] != right {
+					return false, nil
+				}
+			}
+			return true, nil
+		}
+
+		return false, errors.New("unknown question type")
+	}()
+
+	if err == nil {
+		go func() {
+			if err := q.producer.SendUserAttemptEvent(userUUID, questionID, isCorrect); err != nil {
+				log.Printf("Failed to send progress event: %v", err)
+			}
+		}()
+	}
+
+	return isCorrect, err
+
 }
 
 func (q *QuestionUseCase) CreateQuestion(ctx context.Context, text string, typeID, order int, exerciseUUID uuid.UUID) error {

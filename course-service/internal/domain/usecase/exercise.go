@@ -9,7 +9,7 @@ import (
 type ExerciseRepository interface {
 	Create(ctx context.Context, course *entity.Exercise) error
 	GetByID(ctx context.Context, id uuid.UUID) (*entity.Exercise, error)
-	GetByLessonID(ctx context.Context, lessonID uuid.UUID) ([]entity.Exercise, error)
+	GetByLessonID(ctx context.Context, lessonID uuid.UUID) ([]*entity.Exercise, error)
 	Update(ctx context.Context, course *entity.Exercise) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
@@ -33,7 +33,7 @@ func (e *ExerciseUsecase) GetExerciseByID(ctx context.Context, id uuid.UUID) (*e
 	return e.repo.GetByID(ctx, id)
 }
 
-func (e *ExerciseUsecase) GetExercisesByLessonID(ctx context.Context, lessonID uuid.UUID) ([]entity.Exercise, error) {
+func (e *ExerciseUsecase) GetExercisesByLessonID(ctx context.Context, lessonID uuid.UUID) ([]*entity.Exercise, error) {
 	return e.repo.GetByLessonID(ctx, lessonID)
 }
 

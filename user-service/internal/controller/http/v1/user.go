@@ -8,7 +8,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 type UserUseCase interface {
@@ -19,26 +18,19 @@ type UserUseCase interface {
 	UpdateAvatar(ctx context.Context, userID uuid.UUID, avatarFile multipart.File, fileSize int64) (string, error)
 }
 
-type TokenService interface {
-	Validate(token string) (string, error)
-}
-
 type userRoutes struct {
 	uc UserUseCase
-	ts TokenService
 }
 
-func newUserRoutes(handler *gin.RouterGroup, uc UserUseCase, ts TokenService) {
+func newUserRoutes(handler *gin.RouterGroup, uc UserUseCase) {
 	r := &userRoutes{
 		uc: uc,
-		ts: ts,
 	}
 
 	users := handler.Group("/users")
 	{
 		users.GET("/:uuid", r.getUser)
 		users.PATCH("/me", r.updateUser)
-		users.DELETE("/delete", r.deleteUser)
 		users.GET("/all", r.getAllUsers)
 		users.GET("/me", r.getMe)
 		users.POST("/me/avatar", r.updateAvatar)
@@ -46,17 +38,7 @@ func newUserRoutes(handler *gin.RouterGroup, uc UserUseCase, ts TokenService) {
 }
 
 func (r *userRoutes) getMe(c *gin.Context) {
-	token := c.GetHeader("Authorization")
-	if token == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no token provided"})
-		return
-	}
-	token = strings.TrimPrefix(token, "Bearer ")
-
-	sub, err := r.ts.Validate(token)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
-	}
+	sub := c.GetHeader("X-User-UUID")
 
 	user, err := r.uc.GetUser(c.Request.Context(), uuid.MustParse(sub))
 	if err != nil {
@@ -108,17 +90,7 @@ func (r *userRoutes) getUser(c *gin.Context) {
 }
 
 func (r *userRoutes) updateUser(c *gin.Context) {
-	token := c.GetHeader("Authorization")
-	if token == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no token provided"})
-		return
-	}
-	token = strings.TrimPrefix(token, "Bearer ")
-
-	sub, err := r.ts.Validate(token)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
-	}
+	sub := c.GetHeader("X-User-UUID")
 
 	var updateData entity.User
 	if err := c.ShouldBindJSON(&updateData); err != nil {
@@ -134,33 +106,8 @@ func (r *userRoutes) updateUser(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (r *userRoutes) deleteUser(c *gin.Context) {
-	userUUID, err := uuid.Parse(c.Param("uuid"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID format"})
-		return
-	}
-
-	if err := r.uc.DeleteUser(c.Request.Context(), userUUID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete user"})
-		return
-	}
-
-	c.Status(http.StatusOK)
-}
-
 func (r *userRoutes) updateAvatar(c *gin.Context) {
-	token := c.GetHeader("Authorization")
-	if token == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no token provided"})
-		return
-	}
-	token = strings.TrimPrefix(token, "Bearer ")
-
-	sub, err := r.ts.Validate(token)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
-	}
+	sub := c.GetHeader("X-User-UUID")
 
 	file, err := c.FormFile("file")
 	if err != nil {

@@ -1,6 +1,7 @@
 package composite
 
 import (
+	"github.com/JojoWeyn/duo-proj/identity-service/pkg/client/smtp"
 	"time"
 
 	v1 "github.com/JojoWeyn/duo-proj/identity-service/internal/controller/http/v1"
@@ -42,7 +43,14 @@ func NewIdentityComposite(db *gorm.DB, cfg Config) (*IdentityComposite, error) {
 		tokenRepo,
 	)
 
-	verificationService := service.NewVerificationService()
+	smtpClient := smtp.NewSMTPClient(smtp.SMTPConfig{
+		Server:   "mail.hosting.reg.ru",
+		Port:     "465",
+		Sender:   "testing_1@kozhura.team",
+		Password: "t8K-uuG-mZP-WQb",
+	})
+
+	verificationService := service.NewVerificationService(smtpClient)
 
 	producer, err := kafka.NewProducer(cfg.KafkaBrokers, "user_create")
 	if err != nil {

@@ -7,7 +7,6 @@ type QuestionOption struct {
 	Text         string    `json:"text"`
 	IsCorrect    bool      `json:"is_correct"`
 	QuestionUUID uuid.UUID `json:"question_uuid" gorm:"type:uuid;index"`
-	Question     Question  `json:"question" gorm:"foreignKey:QuestionUUID;references:UUID"`
 }
 
 func NewQuestionOption(text string, isCorrect bool, questionUUID uuid.UUID) *QuestionOption {

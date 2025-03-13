@@ -1,20 +1,60 @@
 package main
 
 import (
-	"github.com/JojoWeyn/duo-proj/course-service/internal/domain/entity"
-	"github.com/JojoWeyn/duo-proj/course-service/pkg/client/sqlite"
+	"github.com/JojoWeyn/duo-proj/course-service/internal/composite"
+	"github.com/JojoWeyn/duo-proj/course-service/pkg/client/postgresql"
+	"github.com/joho/godotenv"
+	"log"
+	"os"
+	"time"
 )
 
 func main() {
-	db, err := sqlite.NewSqliteDB(sqlite.Config{
-		Path: "test.db",
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: .env file not found")
+	}
+
+	db, err := postgresql.NewPostgresDB(postgresql.Config{
+		Host:     getEnv("DB_HOST", "localhost"),
+		User:     getEnv("DB_USER", "postgres"),
+		Password: getEnv("DB_PASSWORD", "admin"),
+		DBName:   getEnv("DB_NAME", "postgres"),
+		Port:     getEnvAsInt("DB_PORT", 5432),
+		SslMode:  getEnv("DB_SSL_MODE", "disable"),
+	})
+	if err != nil {
+		log.Fatalf("Failed to initialize db: %s", err.Error())
+	}
+
+	courseComposite, err := composite.NewCourseComposite(db, composite.Config{
+		GatewayURL:   getEnv("GATEWAY_URL", "176.109.108.209:3211"),
+		RedisURL:     getEnv("REDIS_URL", "redis:6379"),
+		RedisDB:      getEnvAsInt("REDIS_DB", 0),
+		KafkaBrokers: getEnv("KAFKA_BROKERS", "localhost"),
 	})
 	if err != nil {
 		panic(err)
 	}
 
-	if err := db.AutoMigrate(&entity.Course{}, &entity.Lesson{}, &entity.Question{}, &entity.QuestionOption{}, &entity.Exercise{}, &entity.Difficulty{}, &entity.CourseType{}); err != nil {
+	port := getEnv("COURSE_PORT", "8083")
+
+	if err := courseComposite.Handler().Run(":" + port); err != nil {
 		panic(err)
 	}
+}
 
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func getEnvAsInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := time.ParseDuration(value); err == nil {
+			return int(intValue.Minutes())
+		}
+	}
+	return defaultValue
 }

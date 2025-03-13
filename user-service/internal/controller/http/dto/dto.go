@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -16,8 +17,10 @@ type UserAchievementsDTO struct {
 }
 
 type AchievementsDTO struct {
-	ID          int       `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID          int             `json:"id"`
+	Title       string          `json:"title"`
+	Description string          `json:"description"`
+	Condition   json.RawMessage `json:"condition"`
+	Secret      bool            `json:"secret"`
+	CreatedAt   time.Time       `json:"created_at"`
 }

@@ -10,7 +10,6 @@ type Lesson struct {
 	Difficulty   Difficulty `json:"difficulty" gorm:"foreignKey:DifficultyID;references:ID"`
 	Order        int        `json:"order"`
 	CourseUUID   uuid.UUID  `json:"course_uuid" gorm:"type:uuid;index"`
-	Course       Course     `json:"course" gorm:"foreignKey:CourseUUID;references:UUID"`
 	Exercises    []Exercise `json:"exercises" gorm:"foreignKey:LessonUUID;constraint:OnDelete:CASCADE"`
 }
 

@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strings"
 
@@ -67,6 +68,12 @@ func (r *identityRoutes) sendVerificationCode(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	go func() {
+		if err := r.verificationService.SendVerificationCode(email, code); err != nil {
+			log.Println(err)
+		}
+	}()
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "verification code generated",

@@ -36,6 +36,31 @@ services:
     networks:
       - pg_network
 
+  course-service:
+    build:
+      dockerfile: Dockerfile
+      context: ./course-service
+    container_name: course-service
+    env_file: .env
+    ports:
+      - "8083:8083"
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - pg_network
+      - redis_network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - redis_network
+    volumes:
+      - redis_data:/data
+
   postgres:
     image: postgres:17
     container_name: postgres
@@ -97,8 +122,13 @@ services:
       - pg_network
     
 volumes:
+  redis_data:
+    driver: local
   postgres_data:
 
+
 networks:
+  redis_network:
+    driver: bridge
   pg_network:
     driver: bridge

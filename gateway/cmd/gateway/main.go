@@ -14,16 +14,18 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Printf("Warning: .env file not found")
+		log.Println("Warning: .env file not found")
 	}
 
-	identityServiceURL := getEnv("IDENTITY_SERVICE_URL", "http://localhost:8081")
-	userServiceURL := getEnv("USER_SERVICE_URL", "http://176.109.108.209:8082")
-
-	proxy, err := v1.NewProxyHandler(identityServiceURL, userServiceURL)
-	if err != nil {
-		log.Fatalf("Failed to initialize identity proxy handler: %s", err.Error())
+	serviceURLs := map[string]string{
+		"identity": getEnv("IDENTITY_SERVICE_URL", "http://localhost:8081"),
+		"user":     getEnv("USER_SERVICE_URL", "http://176.109.108.209:8082"),
+		"course":   getEnv("COURSE_SERVICE_URL", "http://176.109.108.209:8083"),
 	}
+
+	jwtSecret := getEnv("JWT_SIGNING_KEY", "your-signing-key")
+
+	proxy := v1.NewProxyHandler(jwtSecret)
 
 	router := gin.Default()
 
@@ -31,26 +33,44 @@ func main() {
 
 	public := router.Group("/v1")
 	{
-		public.POST("/auth/register", proxy.ProxyIdentityService())
-		public.POST("/auth/login", proxy.ProxyIdentityService())
-		public.POST("/auth/refresh", middleware.RateLimitMiddleware(refreshLimiter), proxy.ProxyIdentityService())
-		public.POST("/auth/password/reset", proxy.ProxyIdentityService())
-		public.POST("/auth/verification/code", proxy.ProxyIdentityService())
+		public.POST("/auth/register", proxy.ProxyService(serviceURLs["identity"], false))
+		public.POST("/auth/login", proxy.ProxyService(serviceURLs["identity"], false))
+		public.POST("/auth/refresh", middleware.RateLimitMiddleware(refreshLimiter), proxy.ProxyService(serviceURLs["identity"], false))
+		public.POST("/auth/password/reset", middleware.RateLimitMiddleware(refreshLimiter), proxy.ProxyService(serviceURLs["identity"], false))
+		public.POST("/auth/verification/code", proxy.ProxyService(serviceURLs["identity"], false))
 	}
 
-	protected := router.Group("/v1")
-	protected.Use(middleware.AuthMiddleware(identityServiceURL))
+	protected := router.Group("/v1", middleware.AuthMiddleware(serviceURLs["identity"]))
 	{
-		protected.POST("/auth/logout", proxy.ProxyIdentityService())
-		protected.GET("/auth/token/status", proxy.ProxyIdentityService())
+		protected.POST("/auth/logout", proxy.ProxyService(serviceURLs["identity"], false))
+		protected.GET("/auth/token/status", proxy.ProxyService(serviceURLs["identity"], false))
 
-		protected.GET("/users/:uuid", proxy.ProxyUserService())
-		protected.GET("/users/all", proxy.ProxyUserService())
-		protected.GET("/users/me", proxy.ProxyUserService())
-		protected.PATCH("/users/me", proxy.ProxyUserService())
-		protected.POST("/users/me/avatar", proxy.ProxyUserService())
-		protected.GET("/users/achievements/:uuid", proxy.ProxyUserService())
-		protected.GET("/achievements/list", proxy.ProxyUserService())
+		userEndpointsGET := []string{
+			"/users/:uuid",
+			"/users/all",
+			"/users/me",
+			"/users/achievements/:uuid",
+			"/achievements/list"}
+		for _, endpoint := range userEndpointsGET {
+			protected.GET(endpoint, proxy.ProxyService(serviceURLs["user"], true))
+		}
+		protected.PATCH("/users/me", proxy.ProxyService(serviceURLs["user"], true))
+		protected.POST("/users/me/avatar", proxy.ProxyService(serviceURLs["user"], true))
+
+		courseEndpointsGET := []string{
+			"/course/list",
+			"/course/:uuid/info",
+			"/course/:uuid/content",
+			"/lesson/:uuid/info",
+			"/lesson/:uuid/content",
+			"/exercise/:uuid/info",
+			"/question/:uuid/info",
+			"/exercise/:uuid/question",
+		}
+		for _, endpoint := range courseEndpointsGET {
+			protected.GET(endpoint, proxy.ProxyService(serviceURLs["course"], true))
+		}
+		protected.POST("/question/:uuid/check", proxy.ProxyService(serviceURLs["course"], true))
 	}
 
 	port := getEnv("PORT", "3211")

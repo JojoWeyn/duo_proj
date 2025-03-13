@@ -9,7 +9,7 @@ import (
 type LessonRepository interface {
 	Create(ctx context.Context, lesson *entity.Lesson) error
 	GetByID(ctx context.Context, id uuid.UUID) (*entity.Lesson, error)
-	GetByCourseID(ctx context.Context, courseID uuid.UUID) ([]entity.Lesson, error)
+	GetByCourseID(ctx context.Context, courseID uuid.UUID) ([]*entity.Lesson, error)
 	Update(ctx context.Context, lesson *entity.Lesson) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
@@ -32,7 +32,7 @@ func (l *LessonUseCase) GetLessonByID(ctx context.Context, id uuid.UUID) (*entit
 	return l.repo.GetByID(ctx, id)
 }
 
-func (l *LessonUseCase) GetLessonsByCourseID(ctx context.Context, courseID uuid.UUID) ([]entity.Lesson, error) {
+func (l *LessonUseCase) GetLessonsByCourseID(ctx context.Context, courseID uuid.UUID) ([]*entity.Lesson, error) {
 	return l.repo.GetByCourseID(ctx, courseID)
 }
 

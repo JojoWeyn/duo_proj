@@ -9,8 +9,8 @@ type Question struct {
 	Text            string           `json:"text"`
 	Order           int              `json:"order"`
 	ExerciseUUID    uuid.UUID        `json:"exercise_uuid" gorm:"type:uuid;index"`
-	Exercise        Exercise         `json:"exercise" gorm:"foreignKey:ExerciseUUID;references:UUID"`
 	QuestionOptions []QuestionOption `json:"question_options" gorm:"foreignKey:QuestionUUID;constraint:OnDelete:CASCADE"`
+	MatchingPairs   []MatchingPair   `json:"matching_pairs" gorm:"foreignKey:QuestionUUID;constraint:OnDelete:CASCADE"`
 }
 
 func NewQuestion(text string, typeID, order int, exerciseUUID uuid.UUID) *Question {
@@ -21,5 +21,6 @@ func NewQuestion(text string, typeID, order int, exerciseUUID uuid.UUID) *Questi
 		Order:           order,
 		ExerciseUUID:    exerciseUUID,
 		QuestionOptions: []QuestionOption{},
+		MatchingPairs:   []MatchingPair{},
 	}
 }

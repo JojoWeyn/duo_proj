@@ -10,7 +10,7 @@ type Achievement struct {
 	ID          int       `json:"id" gorm:"primaryKey"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
-	Condition   string    `json:"condition"` // JSON
+	Condition   string    `json:"condition" gorm:"type:jsonb"`
 	Secret      bool      `json:"secret"`
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -26,8 +26,8 @@ type UserAchievementProgress struct {
 }
 
 type Condition struct {
-	Action     string   `json:"action,omitempty"`
 	Count      int      `json:"count,omitempty"`
+	Action     string   `json:"action,omitempty"`
 	Timeframe  string   `json:"timeframe,omitempty"`
 	Stat       string   `json:"stat,omitempty"`
 	TopPercent int      `json:"top_percent,omitempty"`

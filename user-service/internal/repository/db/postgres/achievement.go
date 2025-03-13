@@ -60,6 +60,10 @@ func (r *AchievementRepository) UpdateUserAchievementProgress(ctx context.Contex
 		return err
 	}
 
+	if progress.Achieved {
+		return nil
+	}
+
 	progress.CurrentCount += countIncrement
 	progress.UpdatedAt = now
 

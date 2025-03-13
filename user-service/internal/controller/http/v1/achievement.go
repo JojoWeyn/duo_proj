@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/dto"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/gin-gonic/gin"
@@ -41,8 +42,26 @@ func (r *achievementRoutes) getAllAchievements(c *gin.Context) {
 		return
 	}
 
+	var newAchievements []dto.AchievementsDTO
+	for _, achievement := range achievements {
+		var condition json.RawMessage
+		if err := json.Unmarshal([]byte(achievement.Condition), &condition); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse condition"})
+			return
+		}
+
+		newAchievements = append(newAchievements, dto.AchievementsDTO{
+			ID:          achievement.ID,
+			Title:       achievement.Title,
+			Description: achievement.Description,
+			Condition:   condition,
+			Secret:      achievement.Secret,
+			CreatedAt:   achievement.CreatedAt,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"achievements": achievements,
+		"achievements": newAchievements,
 	})
 }
 
