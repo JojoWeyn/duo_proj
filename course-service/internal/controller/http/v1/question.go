@@ -50,6 +50,13 @@ func (q *questionRoutes) getQuestionByID(c *gin.Context) {
 		return
 	}
 
+	var imagesDTO []dto.QuestionImageDTO
+	for _, image := range question.QuestionImages {
+		imagesDTO = append(imagesDTO, dto.QuestionImageDTO{
+			ImageURL: image.ImageURL,
+		})
+	}
+
 	var optionsDTO []dto.QuestionOptionDTO
 	for _, option := range question.QuestionOptions {
 		optionsDTO = append(optionsDTO, dto.QuestionOptionDTO{
@@ -78,6 +85,7 @@ func (q *questionRoutes) getQuestionByID(c *gin.Context) {
 		TypeID:          question.TypeID,
 		QuestionType:    question.QuestionType,
 		Text:            question.Text,
+		Images:          imagesDTO,
 		Order:           question.Order,
 		ExerciseUUID:    question.ExerciseUUID,
 		QuestionOptions: optionsDTO,

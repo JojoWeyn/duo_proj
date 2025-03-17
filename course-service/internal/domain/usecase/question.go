@@ -17,15 +17,21 @@ type QuestionRepository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
+type Service interface {
+	ProcessUserAttempt(ctx context.Context, event kafka.UserAttemptEvent) (*kafka.UserProgressEvent, error)
+}
+
 type QuestionUseCase struct {
 	repo     QuestionRepository
 	producer *kafka.Producer
+	service  Service
 }
 
-func NewQuestionUseCase(repo QuestionRepository, producer *kafka.Producer) *QuestionUseCase {
+func NewQuestionUseCase(repo QuestionRepository, producer *kafka.Producer, service Service) *QuestionUseCase {
 	return &QuestionUseCase{
 		repo:     repo,
 		producer: producer,
+		service:  service,
 	}
 }
 
@@ -120,6 +126,22 @@ func (q *QuestionUseCase) CheckAnswer(ctx context.Context, userUUID, questionID 
 				log.Printf("Failed to send progress event: %v", err)
 			}
 		}()
+
+		userProgressEvent, err := q.service.ProcessUserAttempt(ctx, kafka.UserAttemptEvent{
+			UserUUID:     userUUID,
+			QuestionUUID: questionID,
+			IsCorrect:    isCorrect,
+		})
+		if err != nil {
+			log.Printf("Failed to process user attempt: %v", err)
+		}
+		if userProgressEvent != nil {
+			go func() {
+				if err := q.producer.SendUserProgressEvent(*userProgressEvent); err != nil {
+					log.Printf("Failed to send progress event: %v", err)
+				}
+			}()
+		}
 	}
 
 	return isCorrect, err

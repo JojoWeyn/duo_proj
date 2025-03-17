@@ -24,6 +24,8 @@ func (q *QuestionRepository) Create(ctx context.Context, question *entity.Questi
 func (q *QuestionRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Question, error) {
 	var question entity.Question
 	if err := q.db.WithContext(ctx).
+		Preload("QuestionType").
+		Preload("QuestionImages").
 		Preload("MatchingPairs").
 		Preload("QuestionOptions").Where("uuid = ?", id).First(&question).Error; err != nil {
 		return nil, err
@@ -46,5 +48,13 @@ func (q *QuestionRepository) Update(ctx context.Context, question *entity.Questi
 }
 
 func (q *QuestionRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return q.db.WithContext(ctx).Where("id = ?", id).Delete(&entity.Question{}).Error
+	return q.db.WithContext(ctx).Where("uuid = ?", id).Delete(&entity.Question{}).Error
+}
+
+func (q *QuestionRepository) GetCountByExerciseID(ctx context.Context, exerciseID uuid.UUID) (int64, error) {
+	var totalQuestions int64
+	if err := q.db.Model(&entity.Question{}).Where("exercise_uuid = ?", exerciseID).Count(&totalQuestions).Error; err != nil {
+		return 0, err
+	}
+	return totalQuestions, nil
 }

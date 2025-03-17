@@ -12,6 +12,14 @@ type Producer struct {
 	topic    string
 }
 
+type UserProgressEvent struct {
+	UserUUID     uuid.UUID `json:"user_uuid"`
+	ExerciseUUID uuid.UUID `json:"exercise_uuid"`
+	Points       int       `json:"points"`
+	IsCorrect    bool      `json:"is_correct"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
 type UserAttemptEvent struct {
 	UserUUID     uuid.UUID `json:"user_uuid"`
 	QuestionUUID uuid.UUID `json:"question_uuid"`
@@ -42,6 +50,17 @@ func (p *Producer) SendUserAttemptEvent(userUUID, questionUUID uuid.UUID, isCorr
 		CreatedAt:    time.Now(),
 	}
 
+	msgBytes, _ := json.Marshal(event)
+	msg := &sarama.ProducerMessage{
+		Topic: p.topic,
+		Value: sarama.ByteEncoder(msgBytes),
+	}
+
+	_, _, err := p.producer.SendMessage(msg)
+	return err
+}
+
+func (p *Producer) SendUserProgressEvent(event UserProgressEvent) error {
 	msgBytes, _ := json.Marshal(event)
 	msg := &sarama.ProducerMessage{
 		Topic: p.topic,

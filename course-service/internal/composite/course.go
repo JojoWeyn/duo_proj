@@ -7,6 +7,7 @@ import (
 	"github.com/JojoWeyn/duo-proj/course-service/internal/domain/usecase"
 	"github.com/JojoWeyn/duo-proj/course-service/internal/repository/cache"
 	"github.com/JojoWeyn/duo-proj/course-service/internal/repository/db/postgres"
+	"github.com/JojoWeyn/duo-proj/course-service/internal/service"
 	"github.com/JojoWeyn/duo-proj/course-service/pkg/client/redis"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -30,6 +31,7 @@ func NewCourseComposite(db *gorm.DB, cfg Config) (*CourseComposite, error) {
 		&entity.Lesson{},
 		&entity.Exercise{},
 		&entity.Question{},
+		&entity.QuestionImage{},
 		&entity.QuestionOption{},
 		&entity.QuestionType{},
 		&entity.MatchingPair{},
@@ -57,12 +59,13 @@ func NewCourseComposite(db *gorm.DB, cfg Config) (*CourseComposite, error) {
 	}
 
 	courseCache := cache.NewCourseCache(redisClient)
+	attemptService := service.NewAttemptService(questionRepo, exerciseRepo, attemptRepo)
 
 	handler := gin.Default()
 
 	courseUseCase := usecase.NewCourseUseCase(courseRepo, courseCache)
 	exerciseUseCase := usecase.NewExerciseUseCase(exerciseRepo)
-	questionUseCase := usecase.NewQuestionUseCase(questionRepo, progressProducer)
+	questionUseCase := usecase.NewQuestionUseCase(questionRepo, progressProducer, attemptService)
 	lessonUseCase := usecase.NewLessonUseCase(lessonRepo)
 	attemptUseCase := usecase.NewAttemptUseCase(attemptRepo)
 

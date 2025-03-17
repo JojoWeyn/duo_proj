@@ -17,6 +17,15 @@ func NewExerciseRepository(db *gorm.DB) *ExerciseRepository {
 	}
 }
 
+func (e *ExerciseRepository) GetByQuestionID(ctx context.Context, questionID uuid.UUID) (*entity.Exercise, error) {
+	var exercise *entity.Exercise
+	e.db.
+		Joins("JOIN questions ON questions.exercise_uuid = exercises.uuid").
+		Where("questions.uuid = ?", questionID).
+		First(&exercise)
+	return exercise, nil
+}
+
 func (e *ExerciseRepository) Create(ctx context.Context, course *entity.Exercise) error {
 	return e.db.WithContext(ctx).Create(course).Error
 }

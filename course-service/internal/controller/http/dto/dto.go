@@ -28,10 +28,15 @@ type QuestionDTO struct {
 	TypeID          int                 `json:"type_id"`
 	QuestionType    entity.QuestionType `json:"type"`
 	Text            string              `json:"text"`
+	Images          []QuestionImageDTO  `json:"images"`
 	Order           int                 `json:"order"`
 	ExerciseUUID    uuid.UUID           `json:"exercise_uuid"`
 	QuestionOptions []QuestionOptionDTO `json:"question_options"`
 	Matching        QuestionMatchingDTO `json:"matching"`
+}
+
+type QuestionImageDTO struct {
+	ImageURL string `json:"image_url"`
 }
 
 type QuestionOptionDTO struct {
