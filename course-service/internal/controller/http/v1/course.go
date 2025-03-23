@@ -10,11 +10,8 @@ import (
 )
 
 type CourseUseCase interface {
-	CreateCourse(ctx context.Context, title, description string, typeID int) error
 	GetCourseByID(ctx context.Context, id uuid.UUID) (*entity.Course, error)
 	GetAllCourses(ctx context.Context) ([]*entity.Course, error)
-	UpdateCourse(ctx context.Context, course *entity.Course) error
-	DeleteCourse(ctx context.Context, id uuid.UUID) error
 }
 
 type courseRoutes struct {

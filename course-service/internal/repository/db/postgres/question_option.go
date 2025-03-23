@@ -29,8 +29,8 @@ func (q *QuestionOptionRepository) GetByID(ctx context.Context, id uuid.UUID) (*
 	return &questionOption, nil
 }
 
-func (q *QuestionOptionRepository) GetByQuestionID(ctx context.Context, questionID uuid.UUID) ([]*entity.QuestionOption, error) {
-	var questionOptions []*entity.QuestionOption
+func (q *QuestionOptionRepository) GetByQuestionID(ctx context.Context, questionID uuid.UUID) ([]entity.QuestionOption, error) {
+	var questionOptions []entity.QuestionOption
 	if err := q.db.WithContext(ctx).Where("question_uuid = ?", questionID).Find(&questionOptions).Error; err != nil {
 		return nil, err
 	}

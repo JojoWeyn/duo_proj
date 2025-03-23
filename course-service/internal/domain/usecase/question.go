@@ -18,7 +18,7 @@ type QuestionRepository interface {
 }
 
 type Service interface {
-	ProcessUserAttempt(ctx context.Context, event kafka.UserAttemptEvent) (*kafka.UserProgressEvent, error)
+	ProcessUserAttempt(ctx context.Context, event kafka.UserAttemptEvent) ([]kafka.UserProgressEvent, error)
 }
 
 type QuestionUseCase struct {
@@ -35,7 +35,7 @@ func NewQuestionUseCase(repo QuestionRepository, producer *kafka.Producer, servi
 	}
 }
 
-func (q *QuestionUseCase) CheckAnswer(ctx context.Context, userUUID, questionID uuid.UUID, userAnswers interface{}) (bool, error) {
+func (q *QuestionUseCase) CheckAnswer(ctx context.Context, userUUID, questionID uuid.UUID, userAnswers interface{}, sessionUUID uuid.UUID) (bool, error) {
 	question, err := q.repo.GetByID(ctx, questionID)
 	if err != nil {
 		return false, err
@@ -122,23 +122,26 @@ func (q *QuestionUseCase) CheckAnswer(ctx context.Context, userUUID, questionID 
 
 	if err == nil {
 		go func() {
-			if err := q.producer.SendUserAttemptEvent(userUUID, questionID, isCorrect); err != nil {
+			if err := q.producer.SendUserAttemptEvent(userUUID, questionID, isCorrect, sessionUUID); err != nil {
 				log.Printf("Failed to send progress event: %v", err)
 			}
 		}()
 
-		userProgressEvent, err := q.service.ProcessUserAttempt(ctx, kafka.UserAttemptEvent{
+		userProgressEvents, err := q.service.ProcessUserAttempt(ctx, kafka.UserAttemptEvent{
 			UserUUID:     userUUID,
 			QuestionUUID: questionID,
+			SessionUUID:  sessionUUID,
 			IsCorrect:    isCorrect,
 		})
 		if err != nil {
 			log.Printf("Failed to process user attempt: %v", err)
 		}
-		if userProgressEvent != nil {
+		if len(userProgressEvents) > 0 {
 			go func() {
-				if err := q.producer.SendUserProgressEvent(*userProgressEvent); err != nil {
-					log.Printf("Failed to send progress event: %v", err)
+				for _, event := range userProgressEvents {
+					if err := q.producer.SendUserProgressEvent(event); err != nil {
+						log.Printf("Failed to send progress event: %v", err)
+					}
 				}
 			}()
 		}

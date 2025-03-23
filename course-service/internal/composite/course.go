@@ -2,6 +2,7 @@ package composite
 
 import (
 	v1 "github.com/JojoWeyn/duo-proj/course-service/internal/controller/http/v1"
+	"github.com/JojoWeyn/duo-proj/course-service/internal/controller/http/v1/admin"
 	"github.com/JojoWeyn/duo-proj/course-service/internal/controller/kafka"
 	"github.com/JojoWeyn/duo-proj/course-service/internal/domain/entity"
 	"github.com/JojoWeyn/duo-proj/course-service/internal/domain/usecase"
@@ -35,7 +36,10 @@ func NewCourseComposite(db *gorm.DB, cfg Config) (*CourseComposite, error) {
 		&entity.QuestionOption{},
 		&entity.QuestionType{},
 		&entity.MatchingPair{},
-		&entity.Attempt{}); err != nil {
+		&entity.Attempt{},
+		&entity.AttemptSession{},
+		&postgres.Completion{},
+	); err != nil {
 		return nil, err
 	}
 
@@ -44,6 +48,9 @@ func NewCourseComposite(db *gorm.DB, cfg Config) (*CourseComposite, error) {
 	questionRepo := postgres.NewQuestionRepository(db)
 	lessonRepo := postgres.NewLessonRepository(db)
 	attemptRepo := postgres.NewAttemptRepository(db)
+	completionRepo := postgres.NewCompletionRepo(db)
+	matchingPairRepo := postgres.NewMatchingPairRepository(db)
+	questionOptionsRepo := postgres.NewQuestionOptionRepository(db)
 
 	redisClient, err := redis.NewRedisClient(redis.Config{
 		Addr: cfg.RedisURL,
@@ -59,7 +66,7 @@ func NewCourseComposite(db *gorm.DB, cfg Config) (*CourseComposite, error) {
 	}
 
 	courseCache := cache.NewCourseCache(redisClient)
-	attemptService := service.NewAttemptService(questionRepo, exerciseRepo, attemptRepo)
+	attemptService := service.NewAttemptService(questionRepo, exerciseRepo, attemptRepo, lessonRepo, completionRepo)
 
 	handler := gin.Default()
 
@@ -69,8 +76,11 @@ func NewCourseComposite(db *gorm.DB, cfg Config) (*CourseComposite, error) {
 	lessonUseCase := usecase.NewLessonUseCase(lessonRepo)
 	attemptUseCase := usecase.NewAttemptUseCase(attemptRepo)
 
-	v1.NewRouter(handler, courseUseCase, lessonUseCase, exerciseUseCase, questionUseCase, attemptUseCase, cfg.GatewayURL)
+	matchingPairUseCase := usecase.NewMatchingPairUseCase(matchingPairRepo)
+	questionOptionUseCase := usecase.NewQuestionOptionUseCase(questionOptionsRepo)
 
+	v1.NewRouter(handler, courseUseCase, lessonUseCase, exerciseUseCase, questionUseCase, attemptUseCase, cfg.GatewayURL)
+	admin.NewRouter(handler, courseUseCase, lessonUseCase, exerciseUseCase, questionUseCase, matchingPairUseCase, questionOptionUseCase, "*")
 	return &CourseComposite{
 		handler: handler,
 	}, nil

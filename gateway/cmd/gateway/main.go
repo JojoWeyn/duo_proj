@@ -50,7 +50,9 @@ func main() {
 			"/users/all",
 			"/users/me",
 			"/users/achievements/:uuid",
-			"/achievements/list"}
+			"/achievements/list",
+			"/users/me/progress",
+		}
 		for _, endpoint := range userEndpointsGET {
 			protected.GET(endpoint, proxy.ProxyService(serviceURLs["user"], true))
 		}
@@ -71,6 +73,9 @@ func main() {
 			protected.GET(endpoint, proxy.ProxyService(serviceURLs["course"], true))
 		}
 		protected.POST("/question/:uuid/check", proxy.ProxyService(serviceURLs["course"], true))
+		protected.POST("/attempts/start/:exercise_id", proxy.ProxyService(serviceURLs["course"], true))
+		protected.POST("/attempts/:session_id/answer", proxy.ProxyService(serviceURLs["course"], true))
+		protected.POST("/attempts/:session_id/finish", proxy.ProxyService(serviceURLs["course"], true))
 	}
 
 	port := getEnv("PORT", "3211")

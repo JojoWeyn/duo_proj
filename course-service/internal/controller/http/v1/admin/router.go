@@ -1,11 +1,11 @@
-package v1
+package admin
 
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(handler *gin.Engine, cu CourseUseCase, lu LessonUseCase, eu ExerciseUseCase, qu QuestionUseCase, au AttemptUseCase, gatewayUrl string) {
+func NewRouter(handler *gin.Engine, cu CourseUseCase, lu LessonUseCase, eu ExerciseUseCase, qu QuestionUseCase, mpu MatchingPairUseCase, qou QuestionOptionUseCase, gatewayUrl string) {
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{gatewayUrl}
 	config.AllowMethods = []string{"GET", "POST", "OPTIONS"}
@@ -17,10 +17,6 @@ func NewRouter(handler *gin.Engine, cu CourseUseCase, lu LessonUseCase, eu Exerc
 
 	v1 := handler.Group("/v1")
 	{
-		newCourseRoutes(v1, cu)
-		newLessonRoutes(v1, lu)
-		newExerciseRoutes(v1, eu)
-		newQuestionRoutes(v1, qu, au)
-		newAttemptRoutes(v1, au, qu)
+		newAdminRoutes(v1, cu, lu, eu, qu, mpu, qou)
 	}
 }

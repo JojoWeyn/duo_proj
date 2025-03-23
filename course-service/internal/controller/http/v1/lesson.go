@@ -9,11 +9,8 @@ import (
 )
 
 type LessonUseCase interface {
-	CreateLesson(ctx context.Context, title, description string, difficultyID, order int, courseUUID uuid.UUID) error
 	GetLessonByID(ctx context.Context, id uuid.UUID) (*entity.Lesson, error)
 	GetLessonsByCourseID(ctx context.Context, courseID uuid.UUID) ([]*entity.Lesson, error)
-	UpdateLesson(ctx context.Context, lesson *entity.Lesson) error
-	DeleteLesson(ctx context.Context, id uuid.UUID) error
 }
 
 type lessonRoutes struct {

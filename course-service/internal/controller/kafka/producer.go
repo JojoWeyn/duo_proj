@@ -13,16 +13,18 @@ type Producer struct {
 }
 
 type UserProgressEvent struct {
-	UserUUID     uuid.UUID `json:"user_uuid"`
-	ExerciseUUID uuid.UUID `json:"exercise_uuid"`
-	Points       int       `json:"points"`
-	IsCorrect    bool      `json:"is_correct"`
-	CreatedAt    time.Time `json:"created_at"`
+	UserUUID   uuid.UUID `json:"user_uuid"`
+	EntityType string    `json:"entity_type"`
+	EntityUUID uuid.UUID `json:"entity_uuid"`
+	Points     int       `json:"points"`
+	IsCorrect  bool      `json:"is_correct"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 type UserAttemptEvent struct {
 	UserUUID     uuid.UUID `json:"user_uuid"`
 	QuestionUUID uuid.UUID `json:"question_uuid"`
+	SessionUUID  uuid.UUID `json:"session_uuid"`
 	IsCorrect    bool      `json:"is_correct"`
 	CreatedAt    time.Time `json:"created_at"`
 }
@@ -42,17 +44,18 @@ func NewProducer(brokers, topic string) (*Producer, error) {
 	}, nil
 }
 
-func (p *Producer) SendUserAttemptEvent(userUUID, questionUUID uuid.UUID, isCorrect bool) error {
+func (p *Producer) SendUserAttemptEvent(userUUID, questionUUID uuid.UUID, isCorrect bool, sessionUUID uuid.UUID) error {
 	event := UserAttemptEvent{
 		UserUUID:     userUUID,
 		QuestionUUID: questionUUID,
+		SessionUUID:  sessionUUID,
 		IsCorrect:    isCorrect,
 		CreatedAt:    time.Now(),
 	}
 
 	msgBytes, _ := json.Marshal(event)
 	msg := &sarama.ProducerMessage{
-		Topic: p.topic,
+		Topic: "user_attempt",
 		Value: sarama.ByteEncoder(msgBytes),
 	}
 

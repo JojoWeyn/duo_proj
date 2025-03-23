@@ -29,10 +29,11 @@ type UserComposite struct {
 	handler            *gin.Engine
 	UserUseCase        *usecase.UserUseCase
 	AchievementUseCase *usecase.AchievementUseCase
+	ProgressUseCase    *usecase.ProgressUseCase
 }
 
 func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
-	if err := db.AutoMigrate(&entity.User{}, &entity.Rank{}); err != nil {
+	if err := db.AutoMigrate(&entity.User{}, &entity.Rank{}, &entity.Progress{}); err != nil {
 		return nil, err
 	}
 
@@ -65,14 +66,14 @@ func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
 		log.Println("Default achievements added")
 	}
 	s3Client, err := s3.NewS3Client(cfg.S3Endpoint, cfg.S3AccessKey, cfg.S3SecretKey, cfg.S3Bucket)
+	if err != nil {
+		log.Printf("Failed to create S3 client: %v", err)
+	}
 
 	userRepo := postgres.NewUserRepository(db)
 	userS3Repo := s3Repo.NewUserS3Repository(s3Client)
 	achievementRepo := postgres.NewAchievementRepository(db)
-
-	if err != nil {
-		log.Printf("Failed to create S3 client: %v", err)
-	}
+	progressRepo := postgres.NewProgressRepository(db)
 
 	producer, err := kafka.NewProducer(cfg.KafkaBrokers, "user_create")
 	if err != nil {
@@ -81,14 +82,16 @@ func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
 
 	UserUseCase := usecase.NewUserUseCase(userRepo, userS3Repo, producer)
 	AchievementUseCase := usecase.NewAchievementUseCase(achievementRepo)
+	progressUseCase := usecase.NewProgressUseCase(progressRepo)
 
 	handler := gin.Default()
-	v1.NewRouter(handler, UserUseCase, AchievementUseCase, cfg.GatewayURL)
+	v1.NewRouter(handler, UserUseCase, AchievementUseCase, progressUseCase, cfg.GatewayURL)
 
 	return &UserComposite{
 		handler:            handler,
 		UserUseCase:        UserUseCase,
 		AchievementUseCase: AchievementUseCase,
+		ProgressUseCase:    progressUseCase,
 	}, nil
 }
 

@@ -53,6 +53,9 @@ func main() {
 	consumer := kafka.NewSaramaConsumerGroup(app.UserUseCase, app.AchievementUseCase, []string{cfg.KafkaBrokers}, cfg.KafkaTopic, "user-service-group")
 	go consumer.Start(ctx)
 
+	progressConsumer := kafka.NewProgressConsumer([]string{cfg.KafkaBrokers}, "user_progress", "user-service-group", app.ProgressUseCase)
+	go progressConsumer.Start(ctx)
+
 	port := getEnv("USER_PORT", "8082")
 	if err := app.Handler().Run(":" + port); err != nil {
 		log.Fatal("Failed to start server:", err)

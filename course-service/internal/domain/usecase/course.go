@@ -33,8 +33,8 @@ func NewCourseUseCase(repo CourseRepository, cache Cacher) *CourseUseCase {
 	}
 }
 
-func (c *CourseUseCase) CreateCourse(ctx context.Context, title, description string, typeID int) error {
-	course := entity.NewCourse(title, description, typeID)
+func (c *CourseUseCase) CreateCourse(ctx context.Context, title, description string, typeID, difficultyID int) error {
+	course := entity.NewCourse(title, description, typeID, difficultyID)
 	return c.repo.Create(ctx, course)
 }
 

@@ -13,12 +13,13 @@ type Course struct {
 	Difficulty   Difficulty `json:"difficulty" gorm:"foreignKey:DifficultyID;references:ID"`
 }
 
-func NewCourse(title, description string, typeID int) *Course {
+func NewCourse(title, description string, typeID, difficultyID int) *Course {
 	return &Course{
-		UUID:        uuid.New(),
-		Title:       title,
-		Description: description,
-		TypeID:      typeID,
-		Lessons:     []Lesson{},
+		UUID:         uuid.New(),
+		Title:        title,
+		Description:  description,
+		TypeID:       typeID,
+		DifficultyID: difficultyID,
+		Lessons:      []Lesson{},
 	}
 }

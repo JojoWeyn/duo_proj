@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"github.com/JojoWeyn/duo-proj/course-service/internal/domain/entity"
+	"github.com/JojoWeyn/duo-proj/course-service/internal/repository/db/postgres"
 	"github.com/google/uuid"
 )
 
@@ -18,13 +19,13 @@ type QuestionOptionUseCase struct {
 	repo QuestionOptionRepository
 }
 
-func NewQuestionOptionUseCase(repo QuestionOptionRepository) *QuestionOptionUseCase {
+func NewQuestionOptionUseCase(repo *postgres.QuestionOptionRepository) *QuestionOptionUseCase {
 	return &QuestionOptionUseCase{
 		repo: repo,
 	}
 }
 
-func (q *QuestionOptionUseCase) CreateOption(ctx context.Context, text string, isCorrect bool, questionID uuid.UUID) error {
+func (q *QuestionOptionUseCase) CreateQuestionOption(ctx context.Context, text string, isCorrect bool, questionID uuid.UUID) error {
 	option := entity.NewQuestionOption(text, isCorrect, questionID)
 	return q.repo.Create(ctx, option)
 }
@@ -37,10 +38,10 @@ func (q *QuestionOptionUseCase) GetOptionsByQuestionID(ctx context.Context, ques
 	return q.repo.GetByQuestionID(ctx, questionID)
 }
 
-func (q *QuestionOptionUseCase) UpdateOption(ctx context.Context, option *entity.QuestionOption) error {
+func (q *QuestionOptionUseCase) UpdateQuestionOption(ctx context.Context, option *entity.QuestionOption) error {
 	return q.repo.Update(ctx, option)
 }
 
-func (q *QuestionOptionUseCase) DeleteOption(ctx context.Context, id uuid.UUID) error {
+func (q *QuestionOptionUseCase) DeleteQuestionOption(ctx context.Context, id uuid.UUID) error {
 	return q.repo.Delete(ctx, id)
 }
