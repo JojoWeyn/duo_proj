@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gin-contrib/cors"
 	"log"
 	"os"
 	"time"
@@ -27,7 +28,14 @@ func main() {
 
 	proxy := v1.NewProxyHandler(jwtSecret)
 
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"*"}
+	config.AllowMethods = []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
+	config.ExposeHeaders = []string{"Authorization"}
+
 	router := gin.Default()
+	router.Use(cors.New(config))
 
 	refreshLimiter := rate.NewLimiter(rate.Every(1*time.Second), 1)
 

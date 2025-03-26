@@ -7,8 +7,8 @@ import (
 
 func NewRouter(handler *gin.Engine, cu CourseUseCase, lu LessonUseCase, eu ExerciseUseCase, qu QuestionUseCase, mpu MatchingPairUseCase, qou QuestionOptionUseCase, gatewayUrl string) {
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{gatewayUrl}
-	config.AllowMethods = []string{"GET", "POST", "OPTIONS"}
+	config.AllowOrigins = []string{"*"}
+	config.AllowMethods = []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
 	config.ExposeHeaders = []string{"Content-Length"}
 	config.AllowCredentials = true

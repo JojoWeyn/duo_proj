@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/golang-jwt/jwt/v4"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -49,6 +50,9 @@ func (h *ProxyHandler) ProxyService(serviceURL string, addUUID bool) gin.Handler
 					}
 				}
 			}
+
+			req.Header.Set("Origin", "http://37.18.102.166:3211")
+			log.Println(req.Header.Get("Origin"))
 		}
 
 		ctx, cancel := context.WithTimeout(c.Request.Context(), h.timeout)
@@ -58,7 +62,6 @@ func (h *ProxyHandler) ProxyService(serviceURL string, addUUID bool) gin.Handler
 		proxy.ServeHTTP(c.Writer, c.Request)
 	}
 }
-
 func (h *ProxyHandler) extractUUIDFromJWT(tokenString string) (string, error) {
 	if tokenString == "" {
 		return "", errors.New("empty token")
