@@ -21,6 +21,17 @@ type User struct {
 	Achievements []Achievement `json:"achievements" gorm:"many2many:user_achievements;"`
 }
 
+type Leaderboard struct {
+	UserUUID    uuid.UUID `json:"user_uuid"`
+	Login       string    `json:"login"`
+	Name        string    `json:"name"`
+	SecondName  string    `json:"second_name"`
+	LastName    string    `json:"last_name"`
+	TotalPoints int       `json:"total_points"`
+	Avatar      string    `json:"avatar"`
+	Rank        int       `json:"rank"`
+}
+
 func NewUser(userUUID uuid.UUID, login string) *User {
 	return &User{
 		UUID:      userUUID,

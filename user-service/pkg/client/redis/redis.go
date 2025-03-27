@@ -1,0 +1,26 @@
+package redis
+
+import (
+	"context"
+	"github.com/go-redis/redis/v8"
+	"log"
+)
+
+type Config struct {
+	Addr string
+	DB   int
+}
+
+func NewRedisClient(cfg Config) (*redis.Client, error) {
+	client := redis.NewClient(&redis.Options{
+		Addr: cfg.Addr,
+		DB:   cfg.DB,
+	})
+
+	_, err := client.Ping(context.Background()).Result()
+	if err != nil {
+		log.Fatalf("Redis connection failed: %v", err)
+	}
+
+	return client, nil
+}

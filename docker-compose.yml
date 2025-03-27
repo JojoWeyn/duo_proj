@@ -35,6 +35,7 @@ services:
       - kafka
     networks:
       - pg_network
+      - redis_network
 
   course-service:
     build:

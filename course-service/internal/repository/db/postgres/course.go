@@ -32,8 +32,8 @@ func (c *CourseRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.C
 	return &course, nil
 }
 
-func (c *CourseRepository) GetAll(ctx context.Context) ([]*entity.Course, error) {
-	var courses []*entity.Course
+func (c *CourseRepository) GetAll(ctx context.Context) ([]entity.Course, error) {
+	var courses []entity.Course
 
 	if err := c.db.WithContext(ctx).
 		Preload("Difficulty").

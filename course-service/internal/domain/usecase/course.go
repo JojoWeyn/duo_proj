@@ -11,22 +11,22 @@ import (
 type CourseRepository interface {
 	Create(ctx context.Context, course *entity.Course) error
 	GetByID(ctx context.Context, id uuid.UUID) (*entity.Course, error)
-	GetAll(ctx context.Context) ([]*entity.Course, error)
+	GetAll(ctx context.Context) ([]entity.Course, error)
 	Update(ctx context.Context, course *entity.Course) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-type Cacher interface {
-	Get(ctx context.Context, key string) ([]*entity.Course, error)
+type Cache interface {
+	Get(ctx context.Context, key string, dest interface{}) error
 	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error
 }
 
 type CourseUseCase struct {
 	repo  CourseRepository
-	cache Cacher
+	cache Cache
 }
 
-func NewCourseUseCase(repo CourseRepository, cache Cacher) *CourseUseCase {
+func NewCourseUseCase(repo CourseRepository, cache Cache) *CourseUseCase {
 	return &CourseUseCase{
 		repo:  repo,
 		cache: cache,
@@ -42,13 +42,13 @@ func (c *CourseUseCase) GetCourseByID(ctx context.Context, id uuid.UUID) (*entit
 	return c.repo.GetByID(ctx, id)
 }
 
-func (c *CourseUseCase) GetAllCourses(ctx context.Context) ([]*entity.Course, error) {
+func (c *CourseUseCase) GetAllCourses(ctx context.Context) ([]entity.Course, error) {
 	cacheKey := "all_courses"
 
-	cachedCourses, err := c.cache.Get(ctx, cacheKey)
-	if err == nil && cachedCourses != nil {
+	var allCourses []entity.Course
+	if err := c.cache.Get(ctx, cacheKey, &allCourses); err == nil && allCourses != nil {
 		log.Println("Data fetched from cache")
-		return cachedCourses, nil
+		return allCourses, nil
 	}
 
 	allCourses, err := c.repo.GetAll(ctx)
@@ -56,7 +56,7 @@ func (c *CourseUseCase) GetAllCourses(ctx context.Context) ([]*entity.Course, er
 		return nil, err
 	}
 
-	err = c.cache.Set(ctx, cacheKey, allCourses, 10*time.Minute)
+	err = c.cache.Set(ctx, cacheKey, allCourses, 1*time.Minute)
 	if err != nil {
 		log.Printf("Failed to set cache: %v", err)
 	}

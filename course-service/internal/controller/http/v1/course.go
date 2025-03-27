@@ -11,7 +11,7 @@ import (
 
 type CourseUseCase interface {
 	GetCourseByID(ctx context.Context, id uuid.UUID) (*entity.Course, error)
-	GetAllCourses(ctx context.Context) ([]*entity.Course, error)
+	GetAllCourses(ctx context.Context) ([]entity.Course, error)
 }
 
 type courseRoutes struct {

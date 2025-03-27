@@ -42,6 +42,50 @@ func (r *UserRepository) GetAll(ctx context.Context, limit, offset int) ([]*enti
 	return users, nil
 }
 
+func (r *UserRepository) GetLeaderboard(ctx context.Context, limit, offset int) ([]entity.Leaderboard, error) {
+	var leaderboard []entity.Leaderboard
+
+	// Используем ROW_NUMBER() для уникальных мест, с дополнительной сортировкой по дате
+	query := `
+		WITH user_points AS (
+			SELECT
+				u.uuid AS user_uuid,
+				u.login,
+				u.name,
+				u.second_name,
+				u.last_name,
+				u.avatar,
+				COALESCE(SUM(p.points), 0) AS total_points,
+				MAX(p.completed_at) AS latest_completed_at -- используем для сортировки
+			FROM
+				users u
+			LEFT JOIN
+				progresses p ON u.uuid = p.user_uuid AND p.entity_type = 'lesson'
+			GROUP BY
+				u.uuid, u.login, u.name, u.second_name, u.last_name, u.avatar
+		)
+		SELECT
+			up.user_uuid,
+			up.login,
+			up.name,
+			up.second_name,
+			up.last_name,
+			up.avatar,
+			up.total_points,
+			ROW_NUMBER() OVER (ORDER BY up.total_points DESC, up.latest_completed_at DESC) AS rank
+		FROM
+			user_points up
+		ORDER BY
+			rank
+		LIMIT ? OFFSET ?;`
+
+	if err := r.db.WithContext(ctx).Raw(query, limit, offset).Scan(&leaderboard).Error; err != nil {
+		return nil, err
+	}
+
+	return leaderboard, nil
+}
+
 func (r *UserRepository) Update(ctx context.Context, user *entity.User) error {
 	return r.db.WithContext(ctx).Save(user).Error
 }

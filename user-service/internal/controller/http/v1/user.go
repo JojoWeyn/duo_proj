@@ -12,6 +12,7 @@ import (
 )
 
 type UserUseCase interface {
+	GetLeaderboard(ctx context.Context, limit, offset int) ([]entity.Leaderboard, error)
 	GetUser(ctx context.Context, uuid uuid.UUID) (*entity.User, error)
 	UpdateUser(ctx context.Context, uuid uuid.UUID, user *entity.User) error
 	DeleteUser(ctx context.Context, uuid uuid.UUID) error
@@ -42,7 +43,34 @@ func newUserRoutes(handler *gin.RouterGroup, uc UserUseCase, puc ProgressUseCase
 		users.GET("/me", r.getMe)
 		users.POST("/me/avatar", r.updateAvatar)
 		users.GET("/me/progress", r.getProgress)
+		users.GET("/leaderboard", r.getLeaderboard)
 	}
+}
+
+func (r *userRoutes) getLeaderboard(c *gin.Context) {
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if err != nil || limit <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
+		return
+	}
+
+	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	if err != nil || offset < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid offset"})
+		return
+	}
+
+	leaderboard, err := r.userUseCase.GetLeaderboard(c.Request.Context(), limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get leaderboard"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"leaderboard": leaderboard,
+		"limit":       limit,
+		"offset":      offset,
+	})
 }
 
 func (r *userRoutes) getProgress(c *gin.Context) {

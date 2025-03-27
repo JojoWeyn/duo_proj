@@ -65,7 +65,7 @@ func NewCourseComposite(db *gorm.DB, cfg Config) (*CourseComposite, error) {
 		return nil, err
 	}
 
-	courseCache := cache.NewCourseCache(redisClient)
+	courseCache := cache.NewRedisCache(redisClient)
 	attemptService := service.NewAttemptService(questionRepo, exerciseRepo, attemptRepo, lessonRepo, completionRepo)
 
 	handler := gin.Default()

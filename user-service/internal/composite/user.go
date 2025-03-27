@@ -3,6 +3,8 @@ package composite
 import (
 	v1 "github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/v1"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/kafka"
+	"github.com/JojoWeyn/duo-proj/user-service/internal/repository/cache"
+	"github.com/JojoWeyn/duo-proj/user-service/pkg/client/redis"
 	"github.com/JojoWeyn/duo-proj/user-service/pkg/client/s3"
 	"log"
 
@@ -23,6 +25,8 @@ type Config struct {
 	S3AccessKey  string
 	S3SecretKey  string
 	S3Bucket     string
+	RedisURL     string
+	RedisDB      int
 }
 
 type UserComposite struct {
@@ -70,17 +74,25 @@ func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
 		log.Printf("Failed to create S3 client: %v", err)
 	}
 
+	redisClient, err := redis.NewRedisClient(redis.Config{
+		Addr: cfg.RedisURL,
+		DB:   cfg.RedisDB,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	userRepo := postgres.NewUserRepository(db)
 	userS3Repo := s3Repo.NewUserS3Repository(s3Client)
 	achievementRepo := postgres.NewAchievementRepository(db)
 	progressRepo := postgres.NewProgressRepository(db)
-
+	cacher := cache.NewRedisCache(redisClient)
 	producer, err := kafka.NewProducer(cfg.KafkaBrokers, "user_create")
 	if err != nil {
 		return nil, err
 	}
 
-	UserUseCase := usecase.NewUserUseCase(userRepo, userS3Repo, producer)
+	UserUseCase := usecase.NewUserUseCase(userRepo, cacher, userS3Repo, producer)
 	AchievementUseCase := usecase.NewAchievementUseCase(achievementRepo)
 	progressUseCase := usecase.NewProgressUseCase(progressRepo)
 

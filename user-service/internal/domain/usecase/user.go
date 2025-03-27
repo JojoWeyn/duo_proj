@@ -4,18 +4,26 @@ import (
 	"context"
 	"fmt"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/kafka"
+	"log"
 	"mime/multipart"
+	"time"
 
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/google/uuid"
 )
 
 type UserRepository interface {
+	GetLeaderboard(ctx context.Context, limit, offset int) ([]entity.Leaderboard, error)
 	Create(ctx context.Context, user *entity.User) error
 	FindByUUID(ctx context.Context, uuid uuid.UUID) (*entity.User, error)
 	Update(ctx context.Context, user *entity.User) error
 	Delete(ctx context.Context, uuid uuid.UUID) error
 	GetAll(ctx context.Context, limit, offset int) ([]*entity.User, error)
+}
+
+type Cache interface {
+	Get(ctx context.Context, key string, dest interface{}) error
+	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error
 }
 
 type UserS3Repo interface {
@@ -24,13 +32,15 @@ type UserS3Repo interface {
 
 type UserUseCase struct {
 	userRepo UserRepository
+	cache    Cache
 	s3       UserS3Repo
 	producer *kafka.Producer
 }
 
-func NewUserUseCase(userRepo UserRepository, s3 UserS3Repo, producer *kafka.Producer) *UserUseCase {
+func NewUserUseCase(userRepo UserRepository, cache Cache, s3 UserS3Repo, producer *kafka.Producer) *UserUseCase {
 	return &UserUseCase{
 		userRepo: userRepo,
+		cache:    cache,
 		s3:       s3,
 		producer: producer,
 	}
@@ -40,6 +50,28 @@ func (uc *UserUseCase) CreateUser(ctx context.Context, uuid uuid.UUID, login str
 	user := entity.NewUser(uuid, login)
 
 	return uc.userRepo.Create(ctx, user)
+}
+
+func (uc *UserUseCase) GetLeaderboard(ctx context.Context, limit, offset int) ([]entity.Leaderboard, error) {
+	cacheKey := fmt.Sprintf("leaderboard:%d:%d", limit, offset)
+
+	var leaderboard []entity.Leaderboard
+	if err := uc.cache.Get(ctx, cacheKey, &leaderboard); err == nil && leaderboard != nil {
+		log.Println("Leaderboard fetched from cache")
+		return leaderboard, nil
+	}
+
+	leaderboard, err := uc.userRepo.GetLeaderboard(ctx, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	err = uc.cache.Set(ctx, cacheKey, leaderboard, 1*time.Minute)
+	if err != nil {
+		log.Printf("Failed to set cache: %v", err)
+	}
+
+	return leaderboard, nil
 }
 
 func (uc *UserUseCase) GetUser(ctx context.Context, uuid uuid.UUID) (*entity.User, error) {

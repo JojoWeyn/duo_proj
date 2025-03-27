@@ -39,6 +39,8 @@ func main() {
 		S3AccessKey:  getEnv("S3_ACCESS_KEY", "minio"),
 		S3SecretKey:  getEnv("S3_SECRET_KEY", "minio123"),
 		S3Bucket:     getEnv("S3_BUCKET", "user-avatar"),
+		RedisURL:     getEnv("REDIS_URL", "redis:6379"),
+		RedisDB:      getEnvAsInt("REDIS_DB", 0),
 	}
 
 	app, err := composite.NewUserComposite(db, cfg)

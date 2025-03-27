@@ -60,6 +60,7 @@ func main() {
 			"/users/achievements/:uuid",
 			"/achievements/list",
 			"/users/me/progress",
+			"/users/leaderboard",
 		}
 		for _, endpoint := range userEndpointsGET {
 			protected.GET(endpoint, proxy.ProxyService(serviceURLs["user"], true))
