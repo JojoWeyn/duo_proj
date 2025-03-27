@@ -10,9 +10,10 @@ type Identity struct {
 	ID               int       `json:"id" gorm:"primaryKey"`
 	UserUUID         uuid.UUID `json:"user_uuid" gorm:"unique"`
 	Provider         string    `json:"provider"`
+	Role             string    `json:"role"`
 	Email            string    `json:"email"`
 	PasswordHash     string    `json:"-"`
-	VerificationCode string    "json:verification_code"
+	VerificationCode string    `json:"verification_code"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
 }

@@ -1,6 +1,7 @@
 package composite
 
 import (
+	"crypto/rsa"
 	"github.com/JojoWeyn/duo-proj/identity-service/pkg/client/smtp"
 	"time"
 
@@ -21,8 +22,10 @@ type IdentityComposite struct {
 type Config struct {
 	AccessTokenTTL  time.Duration
 	RefreshTokenTTL time.Duration
-	SigningKey      string
-	RefreshKey      string
+	SigningKey      *rsa.PrivateKey
+	RefreshKey      *rsa.PrivateKey
+	SigningPublic   *rsa.PublicKey
+	RefreshPublic   *rsa.PublicKey
 	GatewayURL      string
 	KafkaBrokers    string
 }
@@ -37,7 +40,9 @@ func NewIdentityComposite(db *gorm.DB, cfg Config) (*IdentityComposite, error) {
 
 	tokenService := service.NewTokenService(
 		cfg.SigningKey,
+		cfg.SigningPublic,
 		cfg.RefreshKey,
+		cfg.RefreshPublic,
 		cfg.AccessTokenTTL,
 		cfg.RefreshTokenTTL,
 		tokenRepo,

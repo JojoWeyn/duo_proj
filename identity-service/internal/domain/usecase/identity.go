@@ -29,8 +29,8 @@ type TokenRepository interface {
 }
 
 type TokenService interface {
-	GenerateTokenPair(userID string) (accessToken string, refreshToken string, err error)
-	ValidateToken(token string, isRefreshToken bool) (userID string, err error)
+	GenerateTokenPair(userID, userRole string) (accessToken string, refreshToken string, err error)
+	ValidateToken(token string, isRefreshToken bool) (userID, userRole string, err error)
 	BlacklistToken(ctx context.Context, token string) error
 }
 
@@ -63,11 +63,16 @@ func (uc *IdentityUseCase) ValidateToken(ctx context.Context, token string, isRe
 		return "", errors.New("token is blacklisted")
 	}
 
-	return uc.tokenService.ValidateToken(token, isRefreshToken)
+	userID, _, err := uc.tokenService.ValidateToken(token, isRefreshToken)
+	if err != nil {
+		return "", err
+	}
+
+	return userID, nil
 }
 
 func (uc *IdentityUseCase) RefreshToken(ctx context.Context, refreshToken string) (*Tokens, error) {
-	userID, err := uc.tokenService.ValidateToken(refreshToken, true)
+	userID, userRole, err := uc.tokenService.ValidateToken(refreshToken, true)
 	if err != nil {
 		return nil, errors.New("invalid refresh token")
 	}
@@ -76,7 +81,7 @@ func (uc *IdentityUseCase) RefreshToken(ctx context.Context, refreshToken string
 		return nil, err
 	}
 
-	accessToken, newRefreshToken, err := uc.tokenService.GenerateTokenPair(userID)
+	accessToken, newRefreshToken, err := uc.tokenService.GenerateTokenPair(userID, userRole)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +159,7 @@ func (uc *IdentityUseCase) Login(ctx context.Context, email, password string) (*
 	if err := bcrypt.CompareHashAndPassword([]byte(identity.PasswordHash), []byte(password)); err != nil {
 		return nil, errors.New("invalid email or password")
 	}
-	accessToken, refreshToken, err := uc.tokenService.GenerateTokenPair(identity.UserUUID.String())
+	accessToken, refreshToken, err := uc.tokenService.GenerateTokenPair(identity.UserUUID.String(), identity.Role)
 	if err != nil {
 		return nil, err
 	}

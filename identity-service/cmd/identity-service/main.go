@@ -1,6 +1,10 @@
 package main
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
 	"log"
 	"os"
 	"time"
@@ -33,11 +37,33 @@ func main() {
 		log.Fatalf("Failed to migrate db: %s", err.Error())
 	}
 
+	privateKeySigned, err := loadPrivateKey("private.pem")
+	if err != nil {
+		log.Fatalf("Failed to load private key: %v", err)
+	}
+
+	publicKeySigned, err := loadPublicKey("public.pem")
+	if err != nil {
+		log.Fatalf("Failed to load public key: %v", err)
+	}
+
+	privateKeyRef, err := loadPrivateKey("privateRef.pem")
+	if err != nil {
+		log.Fatalf("Failed to load private key: %v", err)
+	}
+
+	publicKeyRef, err := loadPublicKey("publicRef.pem")
+	if err != nil {
+		log.Fatalf("Failed to load public key: %v", err)
+	}
+
 	identityComposite, err := composite.NewIdentityComposite(db, composite.Config{
 		AccessTokenTTL:  time.Duration(getEnvAsInt("ACCESS_TOKEN_TTL", 15)) * time.Minute,
 		RefreshTokenTTL: time.Duration(getEnvAsInt("REFRESH_TOKEN_TTL", 24)) * time.Minute,
-		SigningKey:      getEnv("JWT_SIGNING_KEY", "your-signing-key"),
-		RefreshKey:      getEnv("JWT_REFRESH_KEY", "your-refresh-key"),
+		SigningKey:      privateKeySigned,
+		SigningPublic:   publicKeySigned,
+		RefreshKey:      privateKeyRef,
+		RefreshPublic:   publicKeyRef,
 		GatewayURL:      getEnv("GATEWAY_URL", "176.109.108.209:3211"),
 		KafkaBrokers:    getEnv("KAFKA_BROKERS", "kafka:29092"),
 	})
@@ -66,4 +92,42 @@ func getEnvAsInt(key string, defaultValue int) int {
 		}
 	}
 	return defaultValue
+}
+
+func loadPrivateKey(path string) (*rsa.PrivateKey, error) {
+	keyData, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(keyData)
+	if block == nil || block.Type != "RSA PRIVATE KEY" {
+		return nil, errors.New("failed to decode PEM block with private key")
+	}
+
+	return x509.ParsePKCS1PrivateKey(block.Bytes)
+}
+
+func loadPublicKey(path string) (*rsa.PublicKey, error) {
+	keyData, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(keyData)
+	if block == nil || block.Type != "PUBLIC KEY" {
+		return nil, errors.New("failed to decode PEM block with public key")
+	}
+
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey, ok := pub.(*rsa.PublicKey)
+	if !ok {
+		return nil, errors.New("not RSA public key")
+	}
+
+	return publicKey, nil
 }

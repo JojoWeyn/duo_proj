@@ -1,6 +1,10 @@
 package main
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
 	"github.com/gin-contrib/cors"
 	"log"
 	"os"
@@ -24,9 +28,12 @@ func main() {
 		"course":   getEnv("COURSE_SERVICE_URL", "http://176.109.108.209:8083"),
 	}
 
-	jwtSecret := getEnv("JWT_SIGNING_KEY", "your-signing-key")
+	jwtPublicKey, err := loadPublicKey("public.pem")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	proxy := v1.NewProxyHandler(jwtSecret)
+	proxy := v1.NewProxyHandler(jwtPublicKey)
 
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"*"}
@@ -99,4 +106,28 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func loadPublicKey(path string) (*rsa.PublicKey, error) {
+	keyData, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(keyData)
+	if block == nil || block.Type != "PUBLIC KEY" {
+		return nil, errors.New("failed to decode PEM block with public key")
+	}
+
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey, ok := pub.(*rsa.PublicKey)
+	if !ok {
+		return nil, errors.New("not RSA public key")
+	}
+
+	return publicKey, nil
 }

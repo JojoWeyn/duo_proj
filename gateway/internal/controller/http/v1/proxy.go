@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"crypto/rsa"
 	"errors"
 	"github.com/golang-jwt/jwt/v4"
 	"log"
@@ -15,14 +16,19 @@ import (
 )
 
 type ProxyHandler struct {
-	timeout   time.Duration
-	jwtSecret string
+	timeout      time.Duration
+	jwtPublicKey *rsa.PublicKey
 }
 
-func NewProxyHandler(jwtSecret string) *ProxyHandler {
+type Claims struct {
+	Sub string `json:"sub"`
+	jwt.RegisteredClaims
+}
+
+func NewProxyHandler(jwtPublicKey *rsa.PublicKey) *ProxyHandler {
 	return &ProxyHandler{
-		timeout:   10 * time.Second,
-		jwtSecret: jwtSecret,
+		timeout:      10 * time.Second,
+		jwtPublicKey: jwtPublicKey,
 	}
 }
 
@@ -72,22 +78,25 @@ func (h *ProxyHandler) extractUUIDFromJWT(tokenString string) (string, error) {
 		return "", errors.New("invalid token format")
 	}
 
-	token, err := jwt.Parse(parts[1], func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+	claims := &Claims{}
+
+	token, err := jwt.ParseWithClaims(parts[1], claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
-		return []byte(h.jwtSecret), nil
+		return h.jwtPublicKey, nil
 	})
 	if err != nil {
 		return "", err
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		if uuid, exists := claims["sub"].(string); exists {
-			return uuid, nil
-		}
+	if !token.Valid {
+		return "", errors.New("invalid token")
+	}
+
+	if claims.Sub == "" {
 		return "", errors.New("uuid not found in token")
 	}
 
-	return "", errors.New("invalid token claims")
+	return claims.Sub, nil
 }
