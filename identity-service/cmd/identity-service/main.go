@@ -5,6 +5,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -37,22 +39,22 @@ func main() {
 		log.Fatalf("Failed to migrate db: %s", err.Error())
 	}
 
-	privateKeySigned, err := loadPrivateKey("private.pem")
+	privateKeySigned, err := loadPrivateKey("/app/private.pem")
 	if err != nil {
 		log.Fatalf("Failed to load private key: %v", err)
 	}
 
-	publicKeySigned, err := loadPublicKey("public.pem")
+	publicKeySigned, err := loadPublicKey("/app/public.pem")
 	if err != nil {
 		log.Fatalf("Failed to load public key: %v", err)
 	}
 
-	privateKeyRef, err := loadPrivateKey("privateRef.pem")
+	privateKeyRef, err := loadPrivateKey("/app/privateRef.pem")
 	if err != nil {
 		log.Fatalf("Failed to load private key: %v", err)
 	}
 
-	publicKeyRef, err := loadPublicKey("publicRef.pem")
+	publicKeyRef, err := loadPublicKey("/app/publicRef.pem")
 	if err != nil {
 		log.Fatalf("Failed to load public key: %v", err)
 	}
@@ -66,6 +68,10 @@ func main() {
 		RefreshPublic:   publicKeyRef,
 		GatewayURL:      getEnv("GATEWAY_URL", "176.109.108.209:3211"),
 		KafkaBrokers:    getEnv("KAFKA_BROKERS", "kafka:29092"),
+		SmtpServer:      getEnv("SMTP_SERVER", ""),
+		SmtpPort:        getEnv("SMTP_PORT", "443"),
+		SmtpSender:      getEnv("SMTP_SENDER", ""),
+		SmtpPassword:    getEnv("SMTP_PASSWORD", ""),
 	})
 	if err != nil {
 		log.Fatalf("Failed to initialize composite: %s", err.Error())
@@ -95,17 +101,25 @@ func getEnvAsInt(key string, defaultValue int) int {
 }
 
 func loadPrivateKey(path string) (*rsa.PrivateKey, error) {
-	keyData, err := os.ReadFile(path)
+	privData, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read private key file: %v", err)
 	}
 
-	block, _ := pem.Decode(keyData)
-	if block == nil || block.Type != "RSA PRIVATE KEY" {
-		return nil, errors.New("failed to decode PEM block with private key")
+	block, _ := pem.Decode(privData)
+	if block == nil {
+		return nil, fmt.Errorf("failed to decode PEM block with private key")
 	}
 
-	return x509.ParsePKCS1PrivateKey(block.Bytes)
+	privKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		privKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse private key: %v", err)
+		}
+	}
+
+	return privKey.(*rsa.PrivateKey), nil
 }
 
 func loadPublicKey(path string) (*rsa.PublicKey, error) {

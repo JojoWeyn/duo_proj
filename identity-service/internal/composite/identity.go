@@ -28,6 +28,10 @@ type Config struct {
 	RefreshPublic   *rsa.PublicKey
 	GatewayURL      string
 	KafkaBrokers    string
+	SmtpServer      string
+	SmtpPort        string
+	SmtpSender      string
+	SmtpPassword    string
 }
 
 func NewIdentityComposite(db *gorm.DB, cfg Config) (*IdentityComposite, error) {
@@ -49,10 +53,10 @@ func NewIdentityComposite(db *gorm.DB, cfg Config) (*IdentityComposite, error) {
 	)
 
 	smtpClient := smtp.NewSMTPClient(smtp.SMTPConfig{
-		Server:   "mail.hosting.reg.ru",
-		Port:     "465",
-		Sender:   "testing_1@kozhura.team",
-		Password: "t8K-uuG-mZP-WQb",
+		Server:   cfg.SmtpServer,
+		Port:     cfg.SmtpPort,
+		Sender:   cfg.SmtpSender,
+		Password: cfg.SmtpPassword,
 	})
 
 	verificationService := service.NewVerificationService(smtpClient)

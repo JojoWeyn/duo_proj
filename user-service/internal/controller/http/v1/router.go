@@ -8,7 +8,7 @@ import (
 func NewRouter(handler *gin.Engine, userUseCase UserUseCase, achievementUseCase AchievementUseCase, progressUseCase ProgressUseCase, gatewayUrl string) {
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{gatewayUrl}
-	config.AllowMethods = []string{"GET", "PUT", "DELETE", "OPTIONS"}
+	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
 	config.ExposeHeaders = []string{"Content-Length"}
 	config.AllowCredentials = true

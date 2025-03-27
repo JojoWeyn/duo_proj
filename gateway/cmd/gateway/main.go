@@ -28,7 +28,7 @@ func main() {
 		"course":   getEnv("COURSE_SERVICE_URL", "http://176.109.108.209:8083"),
 	}
 
-	jwtPublicKey, err := loadPublicKey("public.pem")
+	jwtPublicKey, err := loadPublicKey("/app/public.pem")
 	if err != nil {
 		log.Fatal(err)
 	}
