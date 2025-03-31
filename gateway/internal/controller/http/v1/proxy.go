@@ -3,15 +3,14 @@ package v1
 import (
 	"context"
 	"crypto/rsa"
-	"errors"
 	"github.com/golang-jwt/jwt/v4"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
 	"time"
 
+	"errors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,7 +20,8 @@ type ProxyHandler struct {
 }
 
 type Claims struct {
-	Sub string `json:"sub"`
+	Sub  string `json:"sub"`
+	Role string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -51,14 +51,13 @@ func (h *ProxyHandler) ProxyService(serviceURL string, addUUID bool) gin.Handler
 			if auth := c.GetHeader("Authorization"); auth != "" {
 				req.Header.Set("Authorization", auth)
 				if addUUID {
-					if uuid, err := h.extractUUIDFromJWT(auth); err == nil {
+					if uuid, role, err := h.extractUUIDFromJWT(auth); err == nil {
 						req.Header.Set("X-User-UUID", uuid)
+						req.Header.Set("X-User-Role", role)
 					}
 				}
 			}
-
 			req.Header.Set("Origin", "http://37.18.102.166:3211")
-			log.Println(req.Header.Get("Origin"))
 		}
 
 		ctx, cancel := context.WithTimeout(c.Request.Context(), h.timeout)
@@ -68,14 +67,15 @@ func (h *ProxyHandler) ProxyService(serviceURL string, addUUID bool) gin.Handler
 		proxy.ServeHTTP(c.Writer, c.Request)
 	}
 }
-func (h *ProxyHandler) extractUUIDFromJWT(tokenString string) (string, error) {
+
+func (h *ProxyHandler) extractUUIDFromJWT(tokenString string) (string, string, error) {
 	if tokenString == "" {
-		return "", errors.New("empty token")
+		return "", "", errors.New("empty token")
 	}
 
 	parts := strings.Split(tokenString, " ")
 	if len(parts) != 2 || parts[0] != "Bearer" {
-		return "", errors.New("invalid token format")
+		return "", "", errors.New("invalid token format")
 	}
 
 	claims := &Claims{}
@@ -87,16 +87,16 @@ func (h *ProxyHandler) extractUUIDFromJWT(tokenString string) (string, error) {
 		return h.jwtPublicKey, nil
 	})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if !token.Valid {
-		return "", errors.New("invalid token")
+		return "", "", errors.New("invalid token")
 	}
 
 	if claims.Sub == "" {
-		return "", errors.New("uuid not found in token")
+		return "", "", errors.New("uuid is not found")
 	}
 
-	return claims.Sub, nil
+	return claims.Sub, claims.Role, nil
 }

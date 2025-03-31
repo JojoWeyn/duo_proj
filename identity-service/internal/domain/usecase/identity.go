@@ -14,6 +14,7 @@ type Tokens struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
+
 type IdentityRepository interface {
 	Create(ctx context.Context, identity *entity.Identity) error
 	FindByUUID(ctx context.Context, userID string) (*entity.Identity, error)
@@ -115,8 +116,28 @@ func (uc *IdentityUseCase) Register(ctx context.Context, email, password string)
 		return err
 	}
 
-	if err := uc.producer.SendUserCreated(identity.UserUUID.String(), email); err != nil {
+	return uc.identityRepo.Create(ctx, identity)
+}
 
+func (uc *IdentityUseCase) ConfirmEmail(ctx context.Context, email, code string) error {
+	identity, err := uc.identityRepo.FindByEmail(ctx, email)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	if identity.VerificationCode != code {
+		return errors.New("verification code is incorrect")
+	}
+
+	identity.ConfirmEmail()
+
+	identity.RemoveVerificationCode()
+
+	if err := uc.identityRepo.Update(ctx, identity); err != nil {
+		return err
+	}
+
+	if err := uc.producer.SendUserCreated(identity.UserUUID.String(), email); err != nil {
 		log.Printf("Failed to send user created event: %v", err)
 	}
 
@@ -156,18 +177,25 @@ func (uc *IdentityUseCase) Login(ctx context.Context, email, password string) (*
 	if err != nil {
 		return nil, errors.New("invalid email or password")
 	}
+
 	if err := bcrypt.CompareHashAndPassword([]byte(identity.PasswordHash), []byte(password)); err != nil {
 		return nil, errors.New("invalid email or password")
 	}
+
+	if identity.IsConfirmEmail == false {
+		return nil, errors.New("emails is not confirmed")
+	}
+
 	accessToken, refreshToken, err := uc.tokenService.GenerateTokenPair(identity.UserUUID.String(), identity.Role)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := uc.producer.SendUserLogin(identity.UserUUID.String(), email); err != nil {
-
-		log.Printf("Failed to send user login event: %v", err)
-	}
+	go func() {
+		if err := uc.producer.SendUserLogin(identity.UserUUID.String(), email); err != nil {
+			log.Printf("Failed to send user login event: %v", err)
+		}
+	}()
 
 	return &Tokens{
 		AccessToken:  accessToken,
@@ -179,7 +207,7 @@ func (uc *IdentityUseCase) Login(ctx context.Context, email, password string) (*
 func (uc *IdentityUseCase) ResetPassword(ctx context.Context, email, newPassword string) error {
 	identity, err := uc.identityRepo.FindByEmail(ctx, email)
 	if err != nil {
-		return errors.New("email not found")
+		return errors.New("user is not found")
 	}
 
 	err = entity.ValidatePassword(newPassword)
@@ -194,4 +222,17 @@ func (uc *IdentityUseCase) ResetPassword(ctx context.Context, email, newPassword
 
 	identity.UpdatePassword(string(hashedPassword))
 	return uc.identityRepo.Update(ctx, identity)
+}
+
+func (uc *IdentityUseCase) IsBlacklisted(ctx context.Context, token string) (bool, error) {
+	return uc.tokenRepo.IsBlacklisted(ctx, token)
+}
+
+func (uc *IdentityUseCase) GetByUserUUID(ctx context.Context, userUUID string) (*entity.Identity, error) {
+	identity, err := uc.identityRepo.FindByUUID(ctx, userUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	return identity, nil
 }

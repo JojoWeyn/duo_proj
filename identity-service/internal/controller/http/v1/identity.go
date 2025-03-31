@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"github.com/JojoWeyn/duo-proj/identity-service/internal/domain/entity"
 	"log"
 	"net/http"
 	"strings"
@@ -11,11 +12,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type TokenRepository interface {
+type IdentityUseCase interface {
 	IsBlacklisted(ctx context.Context, token string) (bool, error)
-}
-
-type IdentityUsecase interface {
+	GetByUserUUID(ctx context.Context, userUUID string) (*entity.Identity, error)
 	Register(ctx context.Context, email, password string) error
 	Login(ctx context.Context, email, password string) (*usecase.Tokens, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*usecase.Tokens, error)
@@ -24,6 +23,7 @@ type IdentityUsecase interface {
 	AddVerificationCode(ctx context.Context, email, code string) error
 	VerifyCode(ctx context.Context, email, code string) (bool, error)
 	ValidateToken(ctx context.Context, token string, isRefreshToken bool) (string, error)
+	ConfirmEmail(ctx context.Context, email, code string) error
 }
 
 type VerificationService interface {
@@ -32,15 +32,13 @@ type VerificationService interface {
 }
 
 type identityRoutes struct {
-	identityUsecase     IdentityUsecase
-	tokenRepo           TokenRepository
+	identityUseCase     IdentityUseCase
 	verificationService VerificationService
 }
 
-func newIdentityRoutes(handler *gin.RouterGroup, verificationService VerificationService, identityUsecase IdentityUsecase, tokenRepository TokenRepository) {
+func newIdentityRoutes(handler *gin.RouterGroup, verificationService VerificationService, identityUseCase IdentityUseCase) {
 	r := &identityRoutes{
-		identityUsecase:     identityUsecase,
-		tokenRepo:           tokenRepository,
+		identityUseCase:     identityUseCase,
 		verificationService: verificationService,
 	}
 
@@ -53,7 +51,37 @@ func newIdentityRoutes(handler *gin.RouterGroup, verificationService Verificatio
 		h.GET("/token/status", r.checkToken)
 		h.POST("/password/reset", r.resetPassword)
 		h.POST("/verification/code", r.sendVerificationCode)
+		h.POST("/verification/email", r.confirmEmail)
+		h.GET("/me", r.getIdentity)
 	}
+}
+
+func (r *identityRoutes) getIdentity(c *gin.Context) {
+	token := c.GetHeader("Authorization")
+
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no token provided"})
+		return
+	}
+
+	token = strings.TrimPrefix(token, "Bearer ")
+
+	userUUID, err := r.identityUseCase.ValidateToken(c.Request.Context(), token, false)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	identity, err := r.identityUseCase.GetByUserUUID(c.Request.Context(), userUUID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"email": identity.Email,
+	})
+
 }
 
 func (r *identityRoutes) sendVerificationCode(c *gin.Context) {
@@ -64,7 +92,7 @@ func (r *identityRoutes) sendVerificationCode(c *gin.Context) {
 	}
 
 	code := r.verificationService.GenerateVerificationCode()
-	if err := r.identityUsecase.AddVerificationCode(c.Request.Context(), email, code); err != nil {
+	if err := r.identityUseCase.AddVerificationCode(c.Request.Context(), email, code); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -81,6 +109,21 @@ func (r *identityRoutes) sendVerificationCode(c *gin.Context) {
 	})
 }
 
+func (r *identityRoutes) confirmEmail(c *gin.Context) {
+	var req dto.ConfirmEmailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := r.identityUseCase.ConfirmEmail(c.Request.Context(), req.Email, req.Code); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "email confirmed successfully"})
+}
+
 func (r *identityRoutes) resetPassword(c *gin.Context) {
 	var req dto.PasswordResetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -88,7 +131,7 @@ func (r *identityRoutes) resetPassword(c *gin.Context) {
 		return
 	}
 
-	code, err := r.identityUsecase.VerifyCode(c.Request.Context(), req.Email, req.Code)
+	code, err := r.identityUseCase.VerifyCode(c.Request.Context(), req.Email, req.Code)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -98,7 +141,7 @@ func (r *identityRoutes) resetPassword(c *gin.Context) {
 		return
 	}
 
-	err = r.identityUsecase.ResetPassword(c.Request.Context(), req.Email, req.NewPassword)
+	err = r.identityUseCase.ResetPassword(c.Request.Context(), req.Email, req.NewPassword)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -118,7 +161,7 @@ func (r *identityRoutes) checkToken(c *gin.Context) {
 	token = strings.TrimPrefix(token, "Bearer ")
 
 	validateToken := func(token string, checkRefresh bool) (string, error) {
-		isBlacklisted, err := r.identityUsecase.ValidateToken(c.Request.Context(), token, checkRefresh)
+		isBlacklisted, err := r.identityUseCase.ValidateToken(c.Request.Context(), token, checkRefresh)
 		if err != nil {
 			return "", err
 		}
@@ -148,7 +191,7 @@ func (r *identityRoutes) register(c *gin.Context) {
 		return
 	}
 
-	err := r.identityUsecase.Register(c.Request.Context(), req.Email, req.Password)
+	err := r.identityUseCase.Register(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -164,7 +207,7 @@ func (r *identityRoutes) login(c *gin.Context) {
 		return
 	}
 
-	tokens, err := r.identityUsecase.Login(c.Request.Context(), req.Email, req.Password)
+	tokens, err := r.identityUseCase.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -183,7 +226,7 @@ func (r *identityRoutes) refresh(c *gin.Context) {
 		return
 	}
 
-	tokens, err := r.identityUsecase.RefreshToken(c.Request.Context(), req.RefreshToken)
+	tokens, err := r.identityUseCase.RefreshToken(c.Request.Context(), req.RefreshToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -203,7 +246,7 @@ func (r *identityRoutes) logout(c *gin.Context) {
 	}
 	token = strings.TrimPrefix(token, "Bearer ")
 
-	if err := r.identityUsecase.Logout(c.Request.Context(), token); err != nil {
+	if err := r.identityUseCase.Logout(c.Request.Context(), token); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

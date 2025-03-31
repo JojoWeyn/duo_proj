@@ -28,3 +28,8 @@ type PasswordResetRequest struct {
 	NewPassword string `json:"new_password" binding:"required"`
 	Code        string `json:"code" binding:"required"`
 }
+
+type ConfirmEmailRequest struct {
+	Email string `json:"email" binding:"required,email"`
+	Code  string `json:"code" binding:"required"`
+}

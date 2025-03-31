@@ -130,6 +130,7 @@ func (r *userRoutes) getMe(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
 func (r *userRoutes) getAllUsers(c *gin.Context) {
 	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
 	if err != nil || limit <= 0 {
@@ -155,6 +156,7 @@ func (r *userRoutes) getAllUsers(c *gin.Context) {
 		"offset": offset,
 	})
 }
+
 func (r *userRoutes) getUser(c *gin.Context) {
 	userUUID, err := uuid.Parse(c.Param("uuid"))
 	if err != nil {

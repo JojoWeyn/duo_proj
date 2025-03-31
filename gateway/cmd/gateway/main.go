@@ -53,12 +53,14 @@ func main() {
 		public.POST("/auth/refresh", middleware.RateLimitMiddleware(refreshLimiter), proxy.ProxyService(serviceURLs["identity"], false))
 		public.POST("/auth/password/reset", middleware.RateLimitMiddleware(refreshLimiter), proxy.ProxyService(serviceURLs["identity"], false))
 		public.POST("/auth/verification/code", proxy.ProxyService(serviceURLs["identity"], false))
+		public.POST("/auth/verification/email", proxy.ProxyService(serviceURLs["identity"], false))
 	}
 
 	protected := router.Group("/v1", middleware.AuthMiddleware(serviceURLs["identity"]))
 	{
 		protected.POST("/auth/logout", proxy.ProxyService(serviceURLs["identity"], false))
 		protected.GET("/auth/token/status", proxy.ProxyService(serviceURLs["identity"], false))
+		protected.GET("/auth/me", proxy.ProxyService(serviceURLs["identity"], false))
 
 		userEndpointsGET := []string{
 			"/users/:uuid",
@@ -92,6 +94,28 @@ func main() {
 		protected.POST("/attempts/start/:exercise_id", proxy.ProxyService(serviceURLs["course"], true))
 		protected.POST("/attempts/:session_id/answer", proxy.ProxyService(serviceURLs["course"], true))
 		protected.POST("/attempts/:session_id/finish", proxy.ProxyService(serviceURLs["course"], true))
+
+		protected.POST("/admin/course", proxy.ProxyService(serviceURLs["course"], true))
+		protected.POST("/admin/lesson", proxy.ProxyService(serviceURLs["course"], true))
+		protected.POST("/admin/exercise", proxy.ProxyService(serviceURLs["course"], true))
+		protected.POST("/admin/question", proxy.ProxyService(serviceURLs["course"], true))
+		protected.POST("/admin/question-option", proxy.ProxyService(serviceURLs["course"], true))
+		protected.POST("/admin/matching-pair", proxy.ProxyService(serviceURLs["course"], true))
+
+		protected.PATCH("/admin/course/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+		protected.PATCH("/admin/lesson/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+		protected.PATCH("/admin/exercise/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+		protected.PATCH("/admin/question/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+		protected.PATCH("/admin/question-option/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+		protected.PATCH("/admin/matching-pair/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+
+		protected.DELETE("/admin/course/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+		protected.DELETE("/admin/lesson/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+		protected.DELETE("/admin/exercise/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+		protected.DELETE("/admin/question/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+		protected.DELETE("/admin/question-option/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+		protected.DELETE("/admin/matching-pair/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+
 	}
 
 	port := getEnv("PORT", "3211")

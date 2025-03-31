@@ -13,6 +13,7 @@ type Identity struct {
 	Role             string    `json:"role"`
 	Email            string    `json:"email"`
 	PasswordHash     string    `json:"-"`
+	IsConfirmEmail   bool      `json:"is_confirm_email"`
 	VerificationCode string    `json:"verification_code"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
@@ -24,12 +25,14 @@ func NewIdentity(email, passwordHash string) (*Identity, error) {
 	}
 
 	return &Identity{
-		UserUUID:     uuid.New(),
-		Provider:     "local",
-		Email:        email,
-		PasswordHash: passwordHash,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		UserUUID:       uuid.New(),
+		Provider:       "local",
+		Email:          email,
+		PasswordHash:   passwordHash,
+		IsConfirmEmail: false,
+		Role:           "user",
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 	}, nil
 }
 
@@ -48,14 +51,21 @@ func (i *Identity) UpdatePassword(passwordHash string) {
 	i.UpdatedAt = time.Now()
 }
 
-func (i *Identity) ComparePassword(password string) bool {
-	return i.PasswordHash == password
-}
-
 func (i *Identity) AddVerificationCode(code string) {
 	i.VerificationCode = code
 }
 
 func (i *Identity) RemoveVerificationCode() {
 	i.VerificationCode = ""
+}
+
+func (i *Identity) ConfirmEmail() {
+	i.IsConfirmEmail = true
+}
+
+func (i *Identity) IsConfirmedEmail() bool {
+	if i.IsConfirmEmail {
+		return true
+	}
+	return false
 }

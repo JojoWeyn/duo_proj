@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"crypto/rsa"
-	"fmt"
+	"github.com/JojoWeyn/duo-proj/identity-service/internal/domain/errors"
 	"time"
 
 	"github.com/JojoWeyn/duo-proj/identity-service/internal/domain/entity"
@@ -80,13 +80,13 @@ func (s *TokenService) parseToken(tokenString string, publicKey *rsa.PublicKey) 
 
 	parsedToken, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, errors.ErrUnexpectedSigningMethod
 		}
 		return publicKey, nil
 	})
 
 	if err != nil || !parsedToken.Valid {
-		return nil, fmt.Errorf("invalid token: %w", err)
+		return nil, errors.ErrInvalidToken
 	}
 
 	return claims, nil
@@ -94,7 +94,7 @@ func (s *TokenService) parseToken(tokenString string, publicKey *rsa.PublicKey) 
 
 func (s *TokenService) generateToken(userID, userRole string, privateKey *rsa.PrivateKey, expiration time.Duration) (string, error) {
 	if userID == "" {
-		return "", fmt.Errorf("userID must not be empty")
+		return "", errors.ErrEmptyUserID
 	}
 	if userRole == "" {
 		userRole = "user"

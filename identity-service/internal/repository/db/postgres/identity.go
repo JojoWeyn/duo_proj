@@ -49,7 +49,7 @@ func (r *IdentityRepository) FindByUUID(ctx context.Context, uuid string) (*enti
 }
 
 func (r *IdentityRepository) Update(ctx context.Context, identity *entity.Identity) error {
-	return r.db.WithContext(ctx).Save(identity).Error
+	return r.db.WithContext(ctx).Save(&identity).Error
 }
 
 func (r *IdentityRepository) Delete(id int) error {

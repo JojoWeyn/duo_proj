@@ -75,7 +75,7 @@ func NewIdentityComposite(db *gorm.DB, cfg Config) (*IdentityComposite, error) {
 
 	handler := gin.Default()
 
-	v1.NewRouter(handler, verificationService, identityUseCase, tokenRepo, cfg.GatewayURL)
+	v1.NewRouter(handler, verificationService, identityUseCase, cfg.GatewayURL)
 
 	return &IdentityComposite{
 		handler: handler,
