@@ -20,9 +20,44 @@ export const authAPI = {
 };
 
 export const coursesAPI = {
-  getCourses: () => api.get('/v1/course/list'),
-  getCourseContent: (courseUuid) => api.get(`/v1/course/${courseUuid}/content`),
-  getLessonContent: (lessonUuid) => api.get(`/v1/lesson/${lessonUuid}/content`),
-  getExerciseContent: (exerciseUuid) => api.get(`/v1/exercise/${exerciseUuid}/question`),
-  getQuestionOptions: (questionUuid) => api.get(`/v1/question/${questionUuid}/info`)
+  getCourses: () => api.get('/v1/admin/course/list'),
+  getCourseContent: (courseUuid) => api.get(`/v1/admin/course/${courseUuid}/lesson`),
+  createCourse: (data) => api.post('/v1/admin/course', data),
+  updateCourse: (id, data) => api.patch(`/v1/admin/course/${id}`, data),
+  deleteCourse: (id) => api.delete(`/v1/admin/course/${id}`),
+};
+
+export const lessonsAPI = {
+  getLessonContent: (lessonUuid) => api.get(`/v1/admin/lesson/${lessonUuid}/exercise`),
+  createLesson: (data) => api.post('/v1/admin/lesson', data),
+  updateLesson: (id, data) => api.patch(`/v1/admin/lesson/${id}`, data),
+  deleteLesson: (id) => api.delete(`/v1/admin/lesson/${id}`),
+};
+
+export const exercisesAPI = {
+  getExerciseContent: (exerciseUuid) => api.get(`/v1/admin/exercise/${exerciseUuid}/question`),
+  createExercise: (data) => api.post('/v1/admin/exercise', data),
+  updateExercise: (id, data) => api.patch(`/v1/admin/exercise/${id}`, data),
+  deleteExercise: (id) => api.delete(`/v1/admin/exercise/${id}`),
+};
+
+export const questionsAPI = {
+  getQuestionOptions: (questionUuid) => api.get(`/v1/admin/question/${questionUuid}/question-option`),
+  getMatchingPair: (questionUuid) => api.get(`/v1/admin/question/${questionUuid}/matching-pair`),
+  createQuestion: (data) => api.post('/v1/admin/question', data),
+  updateQuestion: (id, data) => api.patch(`/v1/admin/question/${id}`, data),
+  deleteQuestion: (id) => api.delete(`/v1/admin/question/${id}`),
+  createQuestionOption: (data) => api.post('/v1/admin/question-option', data),
+  createMatchingPair: (data) => api.post('/v1/admin/matching-pair', data),
+  deleteQuestionOption: (id) => api.delete(`/v1/admin/question-option/${id}`),
+  deleteMatchingPair: (id) => api.delete(`/v1/admin/matching-pair/${id}`)
+};
+
+export const usersAPI = {
+  getAll: (offset = 0, limit = 50) => api.get(`/v1/admin/users`, {
+    params: {
+      offset,
+      limit
+    }
+  })
 };
