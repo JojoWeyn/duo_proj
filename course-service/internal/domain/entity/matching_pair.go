@@ -7,7 +7,6 @@ type MatchingPair struct {
 	LeftText     string    `json:"left_text"`
 	RightText    string    `json:"right_text"`
 	QuestionUUID uuid.UUID `json:"question_uuid" gorm:"type:uuid;index"`
-	Question     Question  `json:"question" gorm:"foreignKey:QuestionUUID;references:UUID"`
 }
 
 func NewMatchingPair(left, right string, questionUUID uuid.UUID) *MatchingPair {

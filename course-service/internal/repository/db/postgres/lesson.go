@@ -25,6 +25,7 @@ func (l *LessonRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.L
 	var lesson entity.Lesson
 
 	if err := l.db.WithContext(ctx).
+		Preload("Difficulty").
 		Where("uuid = ?", id).
 		First(&lesson).Error; err != nil {
 		return nil, err
@@ -35,7 +36,9 @@ func (l *LessonRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.L
 func (l *LessonRepository) GetByCourseID(ctx context.Context, courseID uuid.UUID) ([]*entity.Lesson, error) {
 	var lessons []*entity.Lesson
 
-	if err := l.db.WithContext(ctx).Where("course_uuid = ?", courseID).Find(&lessons).Error; err != nil {
+	if err := l.db.WithContext(ctx).
+		Preload("Difficulty").
+		Where("course_uuid = ?", courseID).Find(&lessons).Error; err != nil {
 		return nil, err
 	}
 	return lessons, nil
@@ -45,6 +48,6 @@ func (l *LessonRepository) Update(ctx context.Context, lesson *entity.Lesson) er
 	return l.db.WithContext(ctx).Save(lesson).Error
 }
 
-func (l LessonRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (l *LessonRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return l.db.WithContext(ctx).Delete(&entity.Lesson{UUID: id}).Error
 }

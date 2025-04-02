@@ -95,6 +95,20 @@ func main() {
 		protected.POST("/attempts/:session_id/answer", proxy.ProxyService(serviceURLs["course"], true))
 		protected.POST("/attempts/:session_id/finish", proxy.ProxyService(serviceURLs["course"], true))
 
+		protected.GET("/admin/course/list", proxy.ProxyService(serviceURLs["course"], true))
+		protected.GET("/admin/course/:course_id/lesson", proxy.ProxyService(serviceURLs["course"], true))
+		protected.GET("/admin/lesson/:lesson_id/exercise", proxy.ProxyService(serviceURLs["course"], true))
+		protected.GET("/admin/exercise/:exercise_id/question", proxy.ProxyService(serviceURLs["course"], true))
+		protected.GET("/admin/question/:question_id/question-option", proxy.ProxyService(serviceURLs["course"], true))
+		protected.GET("/admin/question/:question_id/matching-pair", proxy.ProxyService(serviceURLs["course"], true))
+
+		protected.GET("/admin/course/:course_id", proxy.ProxyService(serviceURLs["course"], true))
+		protected.GET("/admin/lesson/:lesson_id", proxy.ProxyService(serviceURLs["course"], true))
+		protected.GET("/admin/exercise/:exercise_id", proxy.ProxyService(serviceURLs["course"], true))
+		protected.GET("/admin/question/:question_id", proxy.ProxyService(serviceURLs["course"], true))
+		protected.GET("/admin/question-option/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+		protected.GET("/admin/matching-pair/:uuid", proxy.ProxyService(serviceURLs["course"], true))
+
 		protected.POST("/admin/course", proxy.ProxyService(serviceURLs["course"], true))
 		protected.POST("/admin/lesson", proxy.ProxyService(serviceURLs["course"], true))
 		protected.POST("/admin/exercise", proxy.ProxyService(serviceURLs["course"], true))

@@ -10,36 +10,48 @@ import (
 )
 
 type QuestionUseCase interface {
+	GetQuestionByID(ctx context.Context, id uuid.UUID) (*entity.Question, error)
+	GetQuestionsByExerciseID(ctx context.Context, exerciseID uuid.UUID) ([]entity.Question, error)
 	CreateQuestion(ctx context.Context, text string, typeID, order int, exerciseUUID uuid.UUID) error
 	UpdateQuestion(ctx context.Context, question *entity.Question) error
 	DeleteQuestion(ctx context.Context, id uuid.UUID) error
 }
 
 type ExerciseUseCase interface {
+	GetExerciseByID(ctx context.Context, id uuid.UUID) (*entity.Exercise, error)
+	GetExercisesByLessonID(ctx context.Context, lessonID uuid.UUID) ([]*entity.Exercise, error)
 	CreateExercise(ctx context.Context, title string, description string, points int, order int, lessonUUID uuid.UUID) error
 	UpdateExercise(ctx context.Context, exercise *entity.Exercise) error
 	DeleteExercise(ctx context.Context, id uuid.UUID) error
 }
 
 type LessonUseCase interface {
+	GetLessonByID(ctx context.Context, id uuid.UUID) (*entity.Lesson, error)
+	GetLessonsByCourseID(ctx context.Context, courseID uuid.UUID) ([]*entity.Lesson, error)
 	CreateLesson(ctx context.Context, title, description string, difficultyID, order int, courseUUID uuid.UUID) error
 	UpdateLesson(ctx context.Context, lesson *entity.Lesson) error
 	DeleteLesson(ctx context.Context, id uuid.UUID) error
 }
 
 type CourseUseCase interface {
+	GetCourseByID(ctx context.Context, id uuid.UUID) (*entity.Course, error)
+	GetAllCourses(ctx context.Context) ([]entity.Course, error)
 	CreateCourse(ctx context.Context, title, description string, typeID, difficultyID int) error
 	UpdateCourse(ctx context.Context, course *entity.Course) error
 	DeleteCourse(ctx context.Context, id uuid.UUID) error
 }
 
 type MatchingPairUseCase interface {
+	GetMatchingPairByID(ctx context.Context, id uuid.UUID) (*entity.MatchingPair, error)
+	GetMatchingPairsByQuestionID(ctx context.Context, questionID uuid.UUID) ([]*entity.MatchingPair, error)
 	CreateMatchingPair(ctx context.Context, left, right string, questionUUID uuid.UUID) error
 	DeleteMatchingPair(ctx context.Context, id uuid.UUID) error
 	UpdateMatchingPair(ctx context.Context, questionMatchingPair *entity.MatchingPair) error
 }
 
 type QuestionOptionUseCase interface {
+	GetOptionByID(ctx context.Context, id uuid.UUID) (*entity.QuestionOption, error)
+	GetOptionsByQuestionID(ctx context.Context, questionID uuid.UUID) ([]entity.QuestionOption, error)
 	CreateQuestionOption(ctx context.Context, text string, isCorrect bool, questionUUID uuid.UUID) error
 	DeleteQuestionOption(ctx context.Context, id uuid.UUID) error
 	UpdateQuestionOption(ctx context.Context, option *entity.QuestionOption) error
@@ -66,6 +78,20 @@ func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase
 
 	h := handler.Group("/admin")
 	{
+		h.GET("/course/list", r.getAllCourses)
+		h.GET("/course/:course_id/lesson", r.getAllLessons)
+		h.GET("/lesson/:lesson_id/exercise", r.getAllExercises)
+		h.GET("/exercise/:exercise_id/question", r.getAllQuestions)
+		h.GET("/question/:question_id/matching-pair", r.getAllMatchingPairs)
+		h.GET("/question/:question_id/question-option", r.getAllQuestionOptions)
+
+		h.GET("/course/:course_id/info", r.getCourseByID)
+		h.GET("/lesson/:lesson_id/info", r.getLessonByID)
+		h.GET("/exercise/:exercise_id/info", r.getExerciseByID)
+		h.GET("/question/:question_id/info", r.getQuestionByID)
+		h.GET("/matching-pair/:id/info", r.getMatchingPairByID)
+		h.GET("/question-option/:id/info", r.getQuestionOptionByID)
+
 		h.POST("/course", r.createCourse)
 		h.POST("/lesson", r.createLesson)
 		h.POST("/exercise", r.createExercise)
@@ -88,6 +114,125 @@ func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase
 		h.DELETE("/question-option/:id", r.deleteQuestionOption)
 
 	}
+}
+
+func (r *adminRoutes) getAllCourses(c *gin.Context) {
+	courses, err := r.courseUseCase.GetAllCourses(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, courses)
+}
+
+func (r *adminRoutes) getAllLessons(c *gin.Context) {
+	id := c.Param("course_id")
+	lessons, err := r.lessonUseCase.GetLessonsByCourseID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, lessons)
+}
+
+func (r *adminRoutes) getAllExercises(c *gin.Context) {
+	id := c.Param("lesson_id")
+	exercises, err := r.exerciseUseCase.GetExercisesByLessonID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, exercises)
+}
+
+func (r *adminRoutes) getAllQuestions(c *gin.Context) {
+	id := c.Param("exercise_id")
+	questions, err := r.questionUseCase.GetQuestionsByExerciseID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, questions)
+}
+
+func (r *adminRoutes) getAllMatchingPairs(c *gin.Context) {
+	id := c.Param("question_id")
+	matchingPairs, err := r.matchingPairUseCase.GetMatchingPairsByQuestionID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, matchingPairs)
+}
+
+func (r *adminRoutes) getAllQuestionOptions(c *gin.Context) {
+	id := c.Param("question_id")
+	questionOptions, err := r.questionOptionUseCase.GetOptionsByQuestionID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, questionOptions)
+}
+
+func (r *adminRoutes) getCourseByID(c *gin.Context) {
+	id := c.Param("id")
+	course, err := r.courseUseCase.GetCourseByID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, course)
+}
+
+func (r *adminRoutes) getLessonByID(c *gin.Context) {
+	id := c.Param("id")
+	lesson, err := r.lessonUseCase.GetLessonByID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, lesson)
+}
+
+func (r *adminRoutes) getExerciseByID(c *gin.Context) {
+	id := c.Param("id")
+	exercise, err := r.exerciseUseCase.GetExerciseByID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, exercise)
+}
+
+func (r *adminRoutes) getQuestionByID(c *gin.Context) {
+	id := c.Param("id")
+	question, err := r.questionUseCase.GetQuestionByID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, question)
+}
+
+func (r *adminRoutes) getMatchingPairByID(c *gin.Context) {
+	id := c.Param("id")
+	matchingPair, err := r.matchingPairUseCase.GetMatchingPairByID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, matchingPair)
+}
+
+func (r *adminRoutes) getQuestionOptionByID(c *gin.Context) {
+	id := c.Param("id")
+	questionOption, err := r.questionOptionUseCase.GetOptionByID(c.Request.Context(), uuid.MustParse(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, questionOption)
 }
 
 func (r *adminRoutes) createCourse(c *gin.Context) {

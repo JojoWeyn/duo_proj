@@ -37,6 +37,7 @@ func (c *CourseRepository) GetAll(ctx context.Context) ([]entity.Course, error) 
 
 	if err := c.db.WithContext(ctx).
 		Preload("Difficulty").
+		Preload("CourseType").
 		Find(&courses).Error; err != nil {
 		return nil, err
 	}
