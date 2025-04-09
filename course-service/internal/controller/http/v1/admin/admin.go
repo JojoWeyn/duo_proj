@@ -176,7 +176,7 @@ func (r *adminRoutes) getAllQuestionOptions(c *gin.Context) {
 }
 
 func (r *adminRoutes) getCourseByID(c *gin.Context) {
-	id := c.Param("id")
+	id := c.Param("course_id")
 	course, err := r.courseUseCase.GetCourseByID(c.Request.Context(), uuid.MustParse(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -186,7 +186,7 @@ func (r *adminRoutes) getCourseByID(c *gin.Context) {
 }
 
 func (r *adminRoutes) getLessonByID(c *gin.Context) {
-	id := c.Param("id")
+	id := c.Param("lesson_id")
 	lesson, err := r.lessonUseCase.GetLessonByID(c.Request.Context(), uuid.MustParse(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -196,7 +196,7 @@ func (r *adminRoutes) getLessonByID(c *gin.Context) {
 }
 
 func (r *adminRoutes) getExerciseByID(c *gin.Context) {
-	id := c.Param("id")
+	id := c.Param("exercise_id")
 	exercise, err := r.exerciseUseCase.GetExerciseByID(c.Request.Context(), uuid.MustParse(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -206,7 +206,7 @@ func (r *adminRoutes) getExerciseByID(c *gin.Context) {
 }
 
 func (r *adminRoutes) getQuestionByID(c *gin.Context) {
-	id := c.Param("id")
+	id := c.Param("question_id")
 	question, err := r.questionUseCase.GetQuestionByID(c.Request.Context(), uuid.MustParse(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

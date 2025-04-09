@@ -70,6 +70,7 @@ func main() {
 			"/achievements/list",
 			"/users/me/progress",
 			"/users/leaderboard",
+			"/users/me/streak",
 		}
 		for _, endpoint := range userEndpointsGET {
 			protected.GET(endpoint, proxy.ProxyService(serviceURLs["user"], true))
@@ -101,6 +102,9 @@ func main() {
 		protected.GET("/admin/exercise/:exercise_id/question", proxy.ProxyService(serviceURLs["course"], true))
 		protected.GET("/admin/question/:question_id/question-option", proxy.ProxyService(serviceURLs["course"], true))
 		protected.GET("/admin/question/:question_id/matching-pair", proxy.ProxyService(serviceURLs["course"], true))
+
+		protected.GET("/admin/users", proxy.ProxyService(serviceURLs["user"], true))
+		protected.DELETE("/admin/users/:uuid", proxy.ProxyService(serviceURLs["user"], true))
 
 		protected.GET("/admin/course/:course_id", proxy.ProxyService(serviceURLs["course"], true))
 		protected.GET("/admin/lesson/:lesson_id", proxy.ProxyService(serviceURLs["course"], true))

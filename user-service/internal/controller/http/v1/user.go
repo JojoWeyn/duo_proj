@@ -22,6 +22,7 @@ type UserUseCase interface {
 
 type ProgressUseCase interface {
 	GetProgress(ctx context.Context, userID uuid.UUID) ([]*entity.Progress, error)
+	GetStreak(ctx context.Context, userID uuid.UUID) (int, error)
 }
 
 type userRoutes struct {
@@ -44,7 +45,26 @@ func newUserRoutes(handler *gin.RouterGroup, uc UserUseCase, puc ProgressUseCase
 		users.POST("/me/avatar", r.updateAvatar)
 		users.GET("/me/progress", r.getProgress)
 		users.GET("/leaderboard", r.getLeaderboard)
+		users.GET("/me/streak", r.getStreak)
 	}
+}
+
+func (r *userRoutes) getStreak(c *gin.Context) {
+	userUUID, err := uuid.Parse(c.GetHeader("X-User-UUID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID format"})
+		return
+	}
+
+	streak, err := r.progressUseCase.GetStreak(c.Request.Context(), userUUID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "streak not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"days": streak,
+	})
 }
 
 func (r *userRoutes) getLeaderboard(c *gin.Context) {

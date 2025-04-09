@@ -2,6 +2,7 @@ package composite
 
 import (
 	v1 "github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/v1"
+	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/v1/admin"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/kafka"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/repository/cache"
 	"github.com/JojoWeyn/duo-proj/user-service/pkg/client/redis"
@@ -98,6 +99,7 @@ func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
 
 	handler := gin.Default()
 	v1.NewRouter(handler, UserUseCase, AchievementUseCase, progressUseCase, cfg.GatewayURL)
+	admin.NewAdminRouter(handler, UserUseCase)
 
 	return &UserComposite{
 		handler:            handler,
