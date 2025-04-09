@@ -11,7 +11,10 @@ import { LessonCreate } from './components/Create/LessonCreate';
 import { ExerciseCreate } from './components/Create/ExerciseCreate';
 import { QuestionCreate } from './components/Create/QuestionCreate';
 import UserList from './components/Users/UserList';
-import PrivateRoute from './components/PrivateRoute'; // Импортируем PrivateRoute
+import PrivateRoute from './components/PrivateRoute';
+import { CourseUpdate } from './components/Update/CourseUpdate';
+import { LessonUpdate } from './components/Update/LessonUpdate';
+import { ExerciseUpdate } from './components/Update/ExerciseUpdate'
 
 function App() {
   return (
@@ -29,6 +32,9 @@ function App() {
           <Route path="/courses/:courseUUID/lesson/create" element={<LessonCreate />} />
           <Route path="/lessons/:lessonUUID/exercise/create" element={<ExerciseCreate />} />
           <Route path="/exercises/:exerciseUUID/question/create" element={<QuestionCreate />} />
+          <Route path="/courses/:courseUUID/update" element={<CourseUpdate/>} />
+          <Route path="/lessons/:lessonUUID/update" element={<LessonUpdate/>}/>
+          <Route path="/exercises/:exerciseUUID/update" element={<ExerciseUpdate/>}/>
           <Route path="/users" element={<UserList />} />
         </Route>
       </Routes>

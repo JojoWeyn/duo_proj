@@ -142,9 +142,9 @@ export const QuestionList = () => {
         ← Назад к упражнению
       </button>
       <h2>Все Вопросы</h2>
-      <div className="lessons-list">
+      <div className="card-list">
         {questions.map((question) => (
-          <div key={question.uuid} className="lesson-card">
+          <div key={question.uuid} className="card-item" style={{cursor: "default"}}>
             <div className="lesson-header">
               <h3>Вопрос {question.order}</h3>
               <span className="lesson-title">{question.text}</span>

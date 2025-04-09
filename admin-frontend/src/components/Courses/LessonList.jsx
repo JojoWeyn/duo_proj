@@ -13,7 +13,8 @@ export const LessonList = () => {
       try {
         const response = await coursesAPI.getCourseContent(uuid);
         console.log('Response data:', response.data);
-        setLessons(response.data);
+        const sortedLessons = response.data.sort((a, b) => a.order - b.order);
+        setLessons(sortedLessons);
       } catch (error) {
         console.error('Error loading lessons:', error);
       }
@@ -36,28 +37,35 @@ export const LessonList = () => {
 
   return (
     <div className="course-detail">
-      <button onClick={() => navigate(-1)} className="back-button">
+      <button onClick={() => navigate(`/courses`)} className="back-button">
         ← Назад к курсам
       </button>
       <h2>Все уроки</h2>
-      <div className="lessons-list">
+      <div className="card-list">
         {lessons.map(lesson => (
-          <div key={lesson.uuid} className="lesson-card">
-            <Link to={`/lessons/${lesson.uuid}`} className="lesson-content">
+          <div>
+          <div onClick={() => navigate(`/lessons/${lesson.uuid}`)} key={lesson.uuid} className="card-item">
+           
               <div className="lesson-header">
                 <h3>Урок {lesson.order}</h3>
                 <span className="lesson-title">{lesson.title}</span>
+
               </div>
-              <p className="lesson-description" style={{ whiteSpace: 'pre-line' }}>
-                {lesson.description.replace(/\n|\n/g, '\n')}
-              </p>
-            </Link>
+              <p style={{ whiteSpace: 'pre-line' }}>{lesson.description.replace(/\\n|\n/g, '\n')}</p>
+
+
+          </div>
+            <div className="card-buttons">
             <button 
-              className="delete-button" 
+              className="delete-button full-width" 
               onClick={() => handleDelete(lesson.uuid)}
             >
               Удалить
             </button>
+            <button onClick={() => navigate(`/lessons/${lesson.uuid}/update`)} className="edit-button full-width">
+                               Изменить
+                             </button>
+              </div>
           </div>
         ))}
       </div>

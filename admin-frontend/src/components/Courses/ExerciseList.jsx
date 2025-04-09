@@ -41,28 +41,39 @@ export const ExercisesList = () => {
       </button>
       <h2>Все упражнения</h2>
       {error && <p className="error-message">{error}</p>}
-      <div className="exercises-list">
+      <div className="card-list">
+      
         {exercises.map(exercise => (
-          <div key={exercise.uuid} className="exercise-item">
-            <h3>{exercise.title}</h3>
-            <p style={{ whiteSpace: 'pre-line' }}>{exercise.description.replace(/\\n|\n/g, '\n')}</p>
-            <div className="exercise-meta">
-              <span>Points: {exercise.points}</span>
-              <button
-                className="view-button"
-                onClick={() => navigate(`/exercises/${exercise.uuid}`)}
-              >
-                Вопросы →
-              </button>
-              {/* Кнопка удаления */}
-              <button
-                className="delete-button"
-                onClick={() => handleDeleteExercise(exercise.uuid)}
-              >
-                Удалить
-              </button>
+          <div>
+          <div onClick={() => navigate(`/exercises/${exercise.uuid}`)} key={exercise.uuid} className="card-item">
+            <div className='lesson-header'>
+
+            <h3>Упражнение {exercise.order}</h3>
+            <span className="lesson-title">{exercise.title}</span>
+            
             </div>
-          </div>
+
+            <p style={{ whiteSpace: 'pre-line' }}>{exercise.description.replace(/\\n|\n/g, '\n')}</p>
+            <div className="card-meta">
+              <span>Points: {exercise.points}</span>
+
+            </div>
+            </div>
+                           <div className="card-buttons">
+                           <button
+                               className="delete-button full-width"
+                               onClick={() => handleDeleteExercise(exercise.uuid)}
+                             >
+                               Удалить
+                             </button>
+                             <button onClick={() => navigate(`/exercises/${exercise.uuid}/update`)} className="edit-button full-width">
+                               Изменить
+                             </button>
+                           
+                          
+                           </div>
+                           </div>
+       
         ))}
       </div>
       <button 

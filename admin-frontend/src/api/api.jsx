@@ -29,6 +29,7 @@ export const coursesAPI = {
 
 export const lessonsAPI = {
   getLessonContent: (lessonUuid) => api.get(`/v1/admin/lesson/${lessonUuid}/exercise`),
+  getLesson: (lessonUuid) => api.get(`v1/lesson/${lessonUuid}/info`),
   createLesson: (data) => api.post('/v1/admin/lesson', data),
   updateLesson: (id, data) => api.patch(`/v1/admin/lesson/${id}`, data),
   deleteLesson: (id) => api.delete(`/v1/admin/lesson/${id}`),
@@ -39,6 +40,7 @@ export const exercisesAPI = {
   createExercise: (data) => api.post('/v1/admin/exercise', data),
   updateExercise: (id, data) => api.patch(`/v1/admin/exercise/${id}`, data),
   deleteExercise: (id) => api.delete(`/v1/admin/exercise/${id}`),
+  getExercise: (exerciseUuid) => api.get(`/v1/exercise/${exerciseUuid}/info`)
 };
 
 export const questionsAPI = {

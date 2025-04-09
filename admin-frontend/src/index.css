@@ -49,6 +49,7 @@ button {
   background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
+  width: auto;
 }
 button:hover {
   border-color: #646cff;
@@ -166,19 +167,15 @@ input, textarea, select {
   margin-top: 2rem;
 }
 
-.course-card {
-  background: var(--white-secondary);
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
 
-.course-meta {
+
+.card-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 1rem;
-  gap: 20px;
+  color: var(--orange-primary);
+  gap: 10px;
 }
 
 .create-button {
@@ -194,32 +191,20 @@ input, textarea, select {
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-/* Exercise List Styles */
-.exercises-list {
-  display: grid;
-  gap: 1.5rem;
-  padding: 1rem;
-}
 
-.exercise-item {
+
+.card-item {
   background: white;
   padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   transition: transform 0.2s;
+
 }
 
-.exercise-item:hover {
+.card-item:hover {
   transform: translateY(-2px);
-}
-
-.exercise-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-  color: var(--orange-primary);
-  gap: 10px;
+  cursor: pointer;
 }
 
 .view-button {
@@ -231,17 +216,10 @@ input, textarea, select {
   opacity: 0.9;
 }
 
-.lessons-list {
+.card-list {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-}
-
-.lesson-item {
-  background: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 8px;
-  border-left: 4px solid var(--orange-primary);
 }
 
 .admin-container {
@@ -267,22 +245,6 @@ input, textarea, select {
 }
 
 
-
-/* Enhanced Course Styles */
-.course-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  transition: transform 0.2s;
-  text-decoration: none;
-  color: inherit;
-}
-
-.course-card:hover {
-  transform: translateY(-2px);
-}
-
 .course-header {
   display: flex;
   justify-content: space-between;
@@ -303,22 +265,6 @@ input, textarea, select {
   line-height: 1.6;
 }
 
-/* Lesson Card Styles */
-.lesson-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  margin-bottom: 1rem;
-  transition: transform 0.2s;
-  text-decoration: none;
-  color: inherit;
-  display: block;
-}
-
-.lesson-card:hover {
-  transform: translateY(-2px);
-}
 
 .lesson-header {
   display: flex;
@@ -329,6 +275,7 @@ input, textarea, select {
 
 .lesson-title {
   font-weight: 500;
+  font-size: large;
   color: var(--orange-primary);
 }
 
@@ -340,8 +287,6 @@ input, textarea, select {
   padding: 1rem 0;
   font-size: 1.1rem;
 }
-
-/* Dashboard.css */
 
 .dashboard-container {
   display: flex;
@@ -372,6 +317,7 @@ input, textarea, select {
   justify-content: center;
   gap: 20px;
 }
+
 
 .logout-button {
   margin-left: auto;
@@ -572,4 +518,31 @@ input, textarea, select {
   cursor: pointer;
   margin-bottom: 10px; /* Отступ снизу между вариантами */
   
+}
+
+.card-buttons {
+  display: flex;
+  flex-direction: row ;
+  gap: 10px;
+  margin-top: 10px;
+  margin-bottom: 10[x];
+}
+
+.full-width {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+}
+
+.delete-button {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.edit-button {
+  background-color: #3498db;
+  color: white;
 }

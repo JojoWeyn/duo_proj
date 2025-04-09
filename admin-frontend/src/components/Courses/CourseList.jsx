@@ -32,31 +32,33 @@ export const CourseList = () => {
   };
 
   return (
-    <div className="course-list">
+    <div className="card-list">
       <h1>Все курсы</h1>
       <div className="courses-container">
         {courses.map((course) => (
-          <div key={course.uuid} className="course-card">
+          <div>
+          <div onClick={() => navigate(`/courses/${course.uuid}`)} key={course.uuid} className="card-item">
             <h2>{course.title}</h2>
             <p>{course.description}</p>
-            <div className="course-meta">
-              <span>Сложность: {course.difficulty.title}</span>
-              <button 
-                onClick={() => navigate(`/courses/${course.uuid}`)}
-                className="view-button"
-              >
-                Уроки →
-              </button>
-              <button 
-                onClick={() => handleDelete(course.uuid)} 
-                className="delete-button"
-              >
+              <div className="card-meta">
+                <span>Сложность: {course.difficulty.title}</span>
+
+              </div>
+            </div> 
+            <div className="card-buttons">
+              <button onClick={() => handleDelete(course.uuid)} className="delete-button full-width">
                 Удалить
+              </button>
+              <button onClick={() => navigate(`/courses/${course.uuid}/update`)} className="edit-button full-width">
+                Изменить
               </button>
             </div>
           </div>
+           
+          
         ))}
       </div>
+      
       <button 
         className="create-button"
         onClick={() => navigate("/course/create")}
@@ -66,3 +68,4 @@ export const CourseList = () => {
     </div>
   );
 };
+
