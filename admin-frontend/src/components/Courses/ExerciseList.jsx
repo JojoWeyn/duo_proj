@@ -11,15 +11,41 @@ export const ExercisesList = () => {
   useEffect(() => {
     const loadExercises = async () => {
       try {
-        const response = await lessonsAPI.getLessonContent(uuid);
-        setExercises(response.data);
+        const lessonUUID = uuid; 
+        const exercises = await lessonsAPI.getLessonContent(lessonUUID);
+    
+        // Получаем мета-данные для всех упражнений
+        const enrichedExercises = await Promise.all(
+          exercises.data.map(async (exercise) => {
+            try {
+              const meta = await exercisesAPI.getExerciseMeta(exercise.uuid);
+    
+              // Если мета-данные существуют, заменяем поля
+              if (meta.data) {
+                return {
+                  ...exercise,
+                  exercise_files: meta.data.exercise_files || exercise.exercise_files,
+                };
+              }
+    
+              return exercise;
+            } catch (error) {
+              console.error(`Error loading meta for exercise ${exercise.uuid}`, error);
+              return exercise;
+            }
+          })
+        );
+    
+        console.log('Exercises with updated exercise_files:', enrichedExercises);
+        setExercises(enrichedExercises);
       } catch (error) {
         console.error('Error loading exercises:', error);
-        alert('Failed to load lesson content');
       }
     };
+  
     loadExercises();
   }, [uuid]);
+  
 
   // Функция для удаления упражнения
   const handleDeleteExercise = async (exerciseUuid) => {
@@ -43,38 +69,84 @@ export const ExercisesList = () => {
       {error && <p className="error-message">{error}</p>}
       <div className="card-list">
       
-        {exercises.map(exercise => (
-          <div>
-          <div onClick={() => navigate(`/exercises/${exercise.uuid}`)} key={exercise.uuid} className="card-item">
-            <div className='lesson-header'>
+      {exercises.map(exercise => (
+  <div key={exercise.uuid}>
+    <div onClick={() => navigate(`/exercises/${exercise.uuid}`)} className="card-item">
+      <div className='lesson-header'>
+        <h3>Упражнение {exercise.order}</h3>
+        <span className="lesson-title">{exercise.title}</span>
+      </div>
 
-            <h3>Упражнение {exercise.order}</h3>
-            <span className="lesson-title">{exercise.title}</span>
-            
-            </div>
+      <p style={{ whiteSpace: 'pre-line' }}>{exercise.description.replace(/\\n|\n/g, '\n')}</p>
 
-            <p style={{ whiteSpace: 'pre-line' }}>{exercise.description.replace(/\\n|\n/g, '\n')}</p>
-            <div className="card-meta">
-              <span>Points: {exercise.points}</span>
+      {exercise?.exercise_files?.length > 0 && (
+        <div className="exercise-files">
+          {exercise.exercise_files.map((file) => {
+            // Проверка типа файла, если это видео
+            if (file.file_url.endsWith('.mp4')) {
+              return (
+                <div key={file.uuid} className="file-preview">
+                  <video width="100%" controls>
+                    <source src={file.file_url} type="video/mp4" />
+                    Ваш браузер не поддерживает воспроизведение видео.
+                  </video>
+                </div>
+              );
+            }
+            // Если это изображение
+            if (file.file_url.match(/\.(jpeg|jpg|gif|png)$/)) {
+              return (
+                <div key={file.uuid} className="file-preview">
+                  <img src={file.file_url} alt={file.title} style={{ width: '100%', height: 'auto' }} />
+                </div>
+              );
+            }
+            // Если это PDF
+            if (file.file_url.endsWith('.pdf')) {
+              return (
+                <div key={file.uuid} className="file-preview">
+                  <iframe
+                    src={file.file_url}
+                    width="100%"
+                    height="500px"
+                    title={file.title}
+                  >
+                    Этот браузер не поддерживает просмотр PDF.
+                  </iframe>
+                </div>
+              );
+            }
+            // В случае других типов файлов, можно просто отображать ссылку
+            return (
+              <div key={file.uuid} className="file-preview">
+                <a href={file.file_url} target="_blank" rel="noreferrer" className="exercise-file-link">
+                  📎 {file.title}
+                </a>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-            </div>
-            </div>
-                           <div className="card-buttons">
-                           <button
-                               className="delete-button full-width"
-                               onClick={() => handleDeleteExercise(exercise.uuid)}
-                             >
-                               Удалить
-                             </button>
-                             <button onClick={() => navigate(`/exercises/${exercise.uuid}/update`)} className="edit-button full-width">
-                               Изменить
-                             </button>
-                           
-                          
-                           </div>
-                           </div>
-       
-        ))}
+      <div className="card-meta">
+        <span>Points: {exercise.points}</span>
+      </div>
+    </div>
+
+    <div className="card-buttons">
+      <button
+        className="delete-button full-width"
+        onClick={() => handleDeleteExercise(exercise.uuid)}
+      >
+        Удалить
+      </button>
+      <button onClick={() => navigate(`/exercises/${exercise.uuid}/update`)} className="edit-button full-width">
+        Изменить
+      </button>
+    </div>
+  </div>
+))}
+
       </div>
       <button 
         className="create-button"

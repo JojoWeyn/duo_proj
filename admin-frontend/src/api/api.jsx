@@ -40,11 +40,13 @@ export const exercisesAPI = {
   createExercise: (data) => api.post('/v1/admin/exercise', data),
   updateExercise: (id, data) => api.patch(`/v1/admin/exercise/${id}`, data),
   deleteExercise: (id) => api.delete(`/v1/admin/exercise/${id}`),
-  getExercise: (exerciseUuid) => api.get(`/v1/exercise/${exerciseUuid}/info`)
+  getExercise: (exerciseUuid) => api.get(`/v1/exercise/${exerciseUuid}/info`),
+  getExerciseMeta: (uuid) => api.get(`/v1/exercise/${uuid}/info`)
 };
 
 export const questionsAPI = {
   getQuestionOptions: (questionUuid) => api.get(`/v1/admin/question/${questionUuid}/question-option`),
+  getQuestionMeta: (uuid) => api.get(`/v1/question/${uuid}/info`),
   getMatchingPair: (questionUuid) => api.get(`/v1/admin/question/${questionUuid}/matching-pair`),
   createQuestion: (data) => api.post('/v1/admin/question', data),
   updateQuestion: (id, data) => api.patch(`/v1/admin/question/${id}`, data),
@@ -54,6 +56,10 @@ export const questionsAPI = {
   deleteQuestionOption: (id) => api.delete(`/v1/admin/question-option/${id}`),
   deleteMatchingPair: (id) => api.delete(`/v1/admin/matching-pair/${id}`)
 };
+
+export const filesAPI = {
+  getList: () => api.get('/v1/admin/file/list')
+}
 
 export const usersAPI = {
   getAll: (offset = 0, limit = 50) => api.get(`/v1/admin/users`, {

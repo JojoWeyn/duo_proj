@@ -17,7 +17,7 @@ const Auth = () => {
     try {
       const response = await authAPI.login(email, password);
       localStorage.setItem('access_token', response.data.access_token);
-      navigate('/');
+      navigate('/courses');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {

@@ -16,35 +16,54 @@ export const QuestionList = () => {
       try {
         const response = await exercisesAPI.getExerciseContent(uuid);
         const sortedQuestions = response.data.sort((a, b) => a.order - b.order);
-        setQuestions(sortedQuestions);
-
-        const optionsPromises = sortedQuestions.map(async (question) => {
-          try {
-            if (question.type_id === 1 || question.type_id === 2) {
-              const optionsResponse = await questionsAPI.getQuestionOptions(question.uuid);
-              return { uuid: question.uuid, options: optionsResponse.data };
-            } else if (question.type_id === 3) {
-              const matchingResponse = await questionsAPI.getMatchingPair(question.uuid);
-              return { uuid: question.uuid, options: matchingResponse.data };
+  
+        const fullQuestions = await Promise.all(
+          sortedQuestions.map(async (question) => {
+            try {
+              const metaResponse = await questionsAPI.getQuestionMeta(question.uuid);
+              return {
+                ...question,
+                ...metaResponse.data, // добавим мету в структуру question
+              };
+            } catch (error) {
+              console.error(`Ошибка при загрузке мета для вопроса ${question.uuid}:`, error);
+              return question; // если мета не загрузилась, вернём вопрос как есть
             }
-          } catch (error) {
-            console.error(`Error loading options for question ${question.uuid}:`, error);
-            return { uuid: question.uuid, options: [] };
-          }
-        });
+          })
+        );
+  
+        setQuestions(fullQuestions);
 
-        const optionsResults = await Promise.all(optionsPromises);
+        const optionsResults = await Promise.all(
+          fullQuestions.map(async (question) => {
+            try {
+              if (question.type_id === 1 || question.type_id === 2) {
+                const optionsResponse = await questionsAPI.getQuestionOptions(question.uuid);
+                return { uuid: question.uuid, options: optionsResponse.data };
+              } else if (question.type_id === 3) {
+                const matchingResponse = await questionsAPI.getMatchingPair(question.uuid);
+                return { uuid: question.uuid, options: matchingResponse.data };
+              }
+            } catch (error) {
+              console.error(`Ошибка при загрузке опций для вопроса ${question.uuid}:`, error);
+              return { uuid: question.uuid, options: [] };
+            }
+          })
+        );
+  
         const optionsData = optionsResults.reduce((acc, result) => {
           acc[result.uuid] = result.options;
           return acc;
         }, {});
-
+        
         setOptions(optionsData);
+  
       } catch (error) {
-        console.error('Error loading questions:', error);
+        console.error('Ошибка при загрузке вопросов:', error);
       }
     };
     loadQuestions();
+
   }, [uuid]);
 
   const handleNewOptionSubmit = async (questionUuid) => {
@@ -153,6 +172,55 @@ export const QuestionList = () => {
               </button>
             </div>
             <p className="lesson-description">{question.type.title}</p>
+
+            {question?.images?.length > 0 && (
+        <div className="exercise-files">
+          {question.images.map((file) => {
+            // Проверка типа файла, если это видео
+            if (file.image_url.endsWith('.mp4')) {
+              return (
+                <div key={file.uuid} className="file-preview">
+                  <video width="100%" controls>
+                    <source src={file.image_url} type="video/mp4" />
+                    Ваш браузер не поддерживает воспроизведение видео.
+                  </video>
+                </div>
+              );
+            }
+            // Если это изображение
+            if (file.image_url.match(/\.(jpeg|jpg|gif|png)$/)) {
+              return (
+                <div key={file.uuid} className="file-preview">
+                  <img src={file.image_url} alt={file.title} style={{ width: '100%', height: 'auto' }} />
+                </div>
+              );
+            }
+            // Если это PDF
+            if (file.image_url.endsWith('.pdf')) {
+              return (
+                <div key={file.uuid} className="file-preview">
+                  <iframe
+                    src={file.image_url}
+                    width="100%"
+                    height="500px"
+                    title={file.title}
+                  >
+                    Этот браузер не поддерживает просмотр PDF.
+                  </iframe>
+                </div>
+              );
+            }
+            // В случае других типов файлов, можно просто отображать ссылку
+            return (
+              <div key={file.uuid} className="file-preview">
+                <a href={file.file_url} target="_blank" rel="noreferrer" className="exercise-file-link">
+                  📎 {file.title}
+                </a>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
             {question.type_id === 1 || question.type_id === 2 ? (
               <div className="options-list">
