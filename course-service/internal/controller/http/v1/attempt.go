@@ -21,8 +21,8 @@ func newAttemptRoutes(handler *gin.RouterGroup, attemptUseCase AttemptUseCase, q
 	h := handler.Group("/attempts")
 	{
 		h.POST("/start/:exercise_id", r.startAttempt)
-		h.POST("/:session_id/answer", r.submitAnswer)
-		h.POST("/:session_id/finish", r.finishAttempt)
+		h.POST("/answer", r.submitAnswer)
+		h.POST("/finish", r.finishAttempt)
 	}
 }
 
@@ -40,8 +40,13 @@ func (a *attemptRoutes) startAttempt(c *gin.Context) {
 }
 
 func (a *attemptRoutes) submitAnswer(c *gin.Context) {
-	sessionID := c.Param("session_id")
+	sessionID := c.Query("session_id")
 	userUUID := c.GetHeader("X-User-UUID")
+
+	if sessionID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing session_id in query"})
+		return
+	}
 
 	var request struct {
 		QuestionUUID string      `json:"question_id"`
@@ -68,7 +73,12 @@ func (a *attemptRoutes) submitAnswer(c *gin.Context) {
 }
 
 func (a *attemptRoutes) finishAttempt(c *gin.Context) {
-	sessionID := c.Param("session_id")
+	sessionID := c.Query("session_id")
+
+	if sessionID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing session_id in query"})
+		return
+	}
 
 	correctAnswers, questions, err := a.attemptUseCase.FinishAttempt(c.Request.Context(), uuid.MustParse(sessionID))
 	if err != nil {
@@ -77,7 +87,6 @@ func (a *attemptRoutes) finishAttempt(c *gin.Context) {
 	}
 
 	var status bool
-
 	if correctAnswers == questions {
 		status = true
 	} else {

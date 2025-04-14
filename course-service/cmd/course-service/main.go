@@ -31,6 +31,10 @@ func main() {
 		RedisURL:     getEnv("REDIS_URL", "redis:6379"),
 		RedisDB:      getEnvAsInt("REDIS_DB", 0),
 		KafkaBrokers: getEnv("KAFKA_BROKERS", "localhost"),
+		S3Endpoint:   getEnv("S3_ENDPOINT", "minio:9000"),
+		S3AccessKey:  getEnv("S3_ACCESS_KEY", "minio"),
+		S3SecretKey:  getEnv("S3_SECRET_KEY", "minio123"),
+		S3Bucket:     getEnv("S3_BUCKET", "duo-bucket"),
 	})
 	if err != nil {
 		panic(err)

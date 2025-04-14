@@ -58,3 +58,7 @@ func (q *QuestionRepository) GetCountByExerciseID(ctx context.Context, exerciseI
 	}
 	return totalQuestions, nil
 }
+
+func (q *QuestionRepository) AddImage(ctx context.Context, file *entity.QuestionImage) error {
+	return q.db.WithContext(ctx).Create(file).Error
+}

@@ -33,7 +33,10 @@ func (e *ExerciseRepository) Create(ctx context.Context, course *entity.Exercise
 func (e *ExerciseRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Exercise, error) {
 	var exercise entity.Exercise
 
-	if err := e.db.WithContext(ctx).Where("uuid = ?", id).First(&exercise).Error; err != nil {
+	if err := e.db.WithContext(ctx).
+		Where("uuid = ?", id).
+		Preload("ExerciseFiles").
+		First(&exercise).Error; err != nil {
 		return nil, err
 	}
 	return &exercise, nil
@@ -54,4 +57,8 @@ func (e *ExerciseRepository) Update(ctx context.Context, course *entity.Exercise
 
 func (e *ExerciseRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return e.db.WithContext(ctx).Delete(&entity.Exercise{UUID: id}).Error
+}
+
+func (e *ExerciseRepository) AddFile(ctx context.Context, file *entity.ExerciseFile) error {
+	return e.db.WithContext(ctx).Create(file).Error
 }

@@ -11,7 +11,7 @@ import (
 
 type CourseUseCase interface {
 	GetCourseByID(ctx context.Context, id uuid.UUID) (*entity.Course, error)
-	GetAllCourses(ctx context.Context) ([]entity.Course, error)
+	GetAllCourses(ctx context.Context, typeId int) ([]entity.Course, error)
 }
 
 type courseRoutes struct {
@@ -51,7 +51,7 @@ func (r *courseRoutes) getCourseByID(c *gin.Context) {
 }
 
 func (r *courseRoutes) getAllCourses(c *gin.Context) {
-	courses, err := r.courseUseCase.GetAllCourses(c.Request.Context())
+	courses, err := r.courseUseCase.GetAllCourses(c.Request.Context(), 2)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}

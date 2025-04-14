@@ -47,7 +47,7 @@ func (u *User) Validate() error {
 		return errors.New("login is empty")
 	}
 
-	if len(u.Login) >= 20 {
+	if len(u.Login) >= 30 {
 		return errors.New("login is too long")
 	}
 

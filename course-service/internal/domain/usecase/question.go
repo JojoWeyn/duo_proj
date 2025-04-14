@@ -10,6 +10,7 @@ import (
 )
 
 type QuestionRepository interface {
+	AddImage(ctx context.Context, file *entity.QuestionImage) error
 	Create(ctx context.Context, question *entity.Question) error
 	GetByID(ctx context.Context, id uuid.UUID) (*entity.Question, error)
 	GetByExerciseID(ctx context.Context, exerciseID uuid.UUID) ([]entity.Question, error)
@@ -125,6 +126,17 @@ func (q *QuestionUseCase) CheckAnswer(ctx context.Context, userUUID, questionID 
 			if err := q.producer.SendUserAttemptEvent(userUUID, questionID, isCorrect, sessionUUID); err != nil {
 				log.Printf("Failed to send progress event: %v", err)
 			}
+
+			if isCorrect == true {
+				if err := q.producer.SendUserEvent(kafka.UserEvent{
+					UUID:   userUUID.String(),
+					Login:  "",
+					Action: "question",
+				}); err != nil {
+					log.Printf("Failed to send progress event: %v", err)
+				}
+			}
+
 		}()
 
 		userProgressEvents, err := q.service.ProcessUserAttempt(ctx, kafka.UserAttemptEvent{
@@ -142,6 +154,14 @@ func (q *QuestionUseCase) CheckAnswer(ctx context.Context, userUUID, questionID 
 					if err := q.producer.SendUserProgressEvent(event); err != nil {
 						log.Printf("Failed to send progress event: %v", err)
 					}
+					if err := q.producer.SendUserEvent(kafka.UserEvent{
+						UUID:   event.UserUUID.String(),
+						Login:  "",
+						Action: event.EntityType,
+					}); err != nil {
+						log.Printf("Failed to send progress event: %v", err)
+					}
+
 				}
 			}()
 		}
@@ -170,4 +190,15 @@ func (q *QuestionUseCase) UpdateQuestion(ctx context.Context, question *entity.Q
 
 func (q *QuestionUseCase) DeleteQuestion(ctx context.Context, id uuid.UUID) error {
 	return q.repo.Delete(ctx, id)
+}
+
+func (q *QuestionUseCase) AddImage(ctx context.Context, questionUUID uuid.UUID, title, fileUrl string) error {
+	file := entity.QuestionImage{
+		UUID:         uuid.New(),
+		Title:        title,
+		ImageURL:     fileUrl,
+		QuestionUUID: questionUUID,
+	}
+
+	return q.repo.AddImage(ctx, &file)
 }

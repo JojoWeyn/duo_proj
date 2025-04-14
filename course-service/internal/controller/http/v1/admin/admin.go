@@ -6,6 +6,8 @@ import (
 	"github.com/JojoWeyn/duo-proj/course-service/internal/domain/entity"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"io"
+	"mime/multipart"
 	"net/http"
 )
 
@@ -15,6 +17,7 @@ type QuestionUseCase interface {
 	CreateQuestion(ctx context.Context, text string, typeID, order int, exerciseUUID uuid.UUID) error
 	UpdateQuestion(ctx context.Context, question *entity.Question) error
 	DeleteQuestion(ctx context.Context, id uuid.UUID) error
+	AddImage(ctx context.Context, questionUUID uuid.UUID, title, fileUrl string) error
 }
 
 type ExerciseUseCase interface {
@@ -23,6 +26,7 @@ type ExerciseUseCase interface {
 	CreateExercise(ctx context.Context, title string, description string, points int, order int, lessonUUID uuid.UUID) error
 	UpdateExercise(ctx context.Context, exercise *entity.Exercise) error
 	DeleteExercise(ctx context.Context, id uuid.UUID) error
+	AddFile(ctx context.Context, exerciseUUID uuid.UUID, title, fileUrl string) error
 }
 
 type LessonUseCase interface {
@@ -35,7 +39,7 @@ type LessonUseCase interface {
 
 type CourseUseCase interface {
 	GetCourseByID(ctx context.Context, id uuid.UUID) (*entity.Course, error)
-	GetAllCourses(ctx context.Context) ([]entity.Course, error)
+	GetAllCourses(ctx context.Context, typeId int) ([]entity.Course, error)
 	CreateCourse(ctx context.Context, title, description string, typeID, difficultyID int) error
 	UpdateCourse(ctx context.Context, course *entity.Course) error
 	DeleteCourse(ctx context.Context, id uuid.UUID) error
@@ -57,6 +61,11 @@ type QuestionOptionUseCase interface {
 	UpdateQuestionOption(ctx context.Context, option *entity.QuestionOption) error
 }
 
+type FileS3UseCase interface {
+	UploadFile(ctx context.Context, file multipart.File, fileName string, fileSize int64, fileType string) (string, error)
+	ListFiles(ctx context.Context) ([]string, error)
+}
+
 type adminRoutes struct {
 	questionUseCase       QuestionUseCase
 	exerciseUseCase       ExerciseUseCase
@@ -64,9 +73,11 @@ type adminRoutes struct {
 	courseUseCase         CourseUseCase
 	matchingPairUseCase   MatchingPairUseCase
 	questionOptionUseCase QuestionOptionUseCase
+
+	fileS3UseCase FileS3UseCase
 }
 
-func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase, eu ExerciseUseCase, qu QuestionUseCase, mpu MatchingPairUseCase, qou QuestionOptionUseCase) {
+func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase, eu ExerciseUseCase, qu QuestionUseCase, mpu MatchingPairUseCase, qou QuestionOptionUseCase, fileS3UseCase FileS3UseCase) {
 	r := &adminRoutes{
 		questionUseCase:       qu,
 		exerciseUseCase:       eu,
@@ -74,6 +85,7 @@ func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase
 		courseUseCase:         cu,
 		matchingPairUseCase:   mpu,
 		questionOptionUseCase: qou,
+		fileS3UseCase:         fileS3UseCase,
 	}
 
 	h := handler.Group("/admin")
@@ -99,6 +111,8 @@ func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase
 		h.POST("/matching-pair", r.createMatchingPair)
 		h.POST("/question-option", r.createQuestionOption)
 
+		h.POST("/file/add", r.addFile)
+
 		h.PATCH("/course/:id", r.updateCourse)
 		h.PATCH("/lesson/:id", r.updateLesson)
 		h.PATCH("/exercise/:id", r.updateExercise)
@@ -113,11 +127,101 @@ func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase
 		h.DELETE("/matching-pair/:id", r.deleteMatchingPair)
 		h.DELETE("/question-option/:id", r.deleteQuestionOption)
 
+		h.POST("/file/upload", r.uploadFile)
+		h.GET("/file/list", r.listFile)
+
 	}
 }
 
+func (r *adminRoutes) addFile(c *gin.Context) {
+	var req struct {
+		Title   string `json:"title"`
+		FileUrl string `json:"file_url"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	entityType := c.Query("entity")
+	id := uuid.MustParse(c.Query("uuid"))
+
+	switch entityType {
+	case "exercise":
+		if err := r.exerciseUseCase.AddFile(c.Request.Context(), id, req.Title, req.FileUrl); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, nil)
+
+	case "question":
+		if err := r.questionUseCase.AddImage(c.Request.Context(), id, req.Title, req.FileUrl); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, nil)
+
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported entity type"})
+	}
+
+}
+
+func (r *adminRoutes) listFile(c *gin.Context) {
+	files, err := r.fileS3UseCase.ListFiles(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"files": files})
+}
+
+func (r *adminRoutes) uploadFile(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	fileSize := file.Size
+	fileName := file.Filename
+	fileData, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open file"})
+		return
+	}
+	defer fileData.Close()
+
+	buffer := make([]byte, 512)
+	_, err = fileData.Read(buffer)
+	if err != nil && err != io.EOF {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read file data"})
+		return
+	}
+
+	fileType := http.DetectContentType(buffer)
+
+	_, err = fileData.Seek(0, io.SeekStart)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reset file reader"})
+		return
+	}
+
+	fileURL, err := r.fileS3UseCase.UploadFile(c.Request.Context(), fileData, fileName, fileSize, fileType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload file on storage"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"file_url":  fileURL,
+		"file_type": fileType,
+	})
+}
+
 func (r *adminRoutes) getAllCourses(c *gin.Context) {
-	courses, err := r.courseUseCase.GetAllCourses(c.Request.Context())
+	courses, err := r.courseUseCase.GetAllCourses(c.Request.Context(), 0)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

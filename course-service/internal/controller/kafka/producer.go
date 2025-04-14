@@ -29,6 +29,12 @@ type UserAttemptEvent struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
+type UserEvent struct {
+	UUID   string `json:"uuid"`
+	Login  string `json:"login"`
+	Action string `json:"action"`
+}
+
 func NewProducer(brokers, topic string) (*Producer, error) {
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true
@@ -67,6 +73,17 @@ func (p *Producer) SendUserProgressEvent(event UserProgressEvent) error {
 	msgBytes, _ := json.Marshal(event)
 	msg := &sarama.ProducerMessage{
 		Topic: p.topic,
+		Value: sarama.ByteEncoder(msgBytes),
+	}
+
+	_, _, err := p.producer.SendMessage(msg)
+	return err
+}
+
+func (p *Producer) SendUserEvent(event UserEvent) error {
+	msgBytes, _ := json.Marshal(event)
+	msg := &sarama.ProducerMessage{
+		Topic: "user_create",
 		Value: sarama.ByteEncoder(msgBytes),
 	}
 

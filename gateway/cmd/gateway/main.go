@@ -93,8 +93,8 @@ func main() {
 		}
 		protected.POST("/question/:uuid/check", proxy.ProxyService(serviceURLs["course"], true))
 		protected.POST("/attempts/start/:exercise_id", proxy.ProxyService(serviceURLs["course"], true))
-		protected.POST("/attempts/:session_id/answer", proxy.ProxyService(serviceURLs["course"], true))
-		protected.POST("/attempts/:session_id/finish", proxy.ProxyService(serviceURLs["course"], true))
+		protected.POST("/attempts/answer", proxy.ProxyService(serviceURLs["course"], true))
+		protected.POST("/attempts/finish", proxy.ProxyService(serviceURLs["course"], true))
 
 		protected.GET("/admin/course/list", proxy.ProxyService(serviceURLs["course"], true))
 		protected.GET("/admin/course/:course_id/lesson", proxy.ProxyService(serviceURLs["course"], true))
@@ -134,6 +134,9 @@ func main() {
 		protected.DELETE("/admin/question-option/:uuid", proxy.ProxyService(serviceURLs["course"], true))
 		protected.DELETE("/admin/matching-pair/:uuid", proxy.ProxyService(serviceURLs["course"], true))
 
+		protected.POST("/admin/file/upload", proxy.ProxyService(serviceURLs["course"], true))
+		protected.GET("/admin/file/list", proxy.ProxyService(serviceURLs["course"], true))
+		protected.POST("/admin/file/add", proxy.ProxyService(serviceURLs["course"], true))
 	}
 
 	port := getEnv("PORT", "3211")

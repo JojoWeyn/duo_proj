@@ -8,8 +8,10 @@ import (
 	"github.com/JojoWeyn/duo-proj/course-service/internal/domain/usecase"
 	"github.com/JojoWeyn/duo-proj/course-service/internal/repository/cache"
 	"github.com/JojoWeyn/duo-proj/course-service/internal/repository/db/postgres"
+	s3Repo "github.com/JojoWeyn/duo-proj/course-service/internal/repository/db/s3"
 	"github.com/JojoWeyn/duo-proj/course-service/internal/service"
 	"github.com/JojoWeyn/duo-proj/course-service/pkg/client/redis"
+	"github.com/JojoWeyn/duo-proj/course-service/pkg/client/s3"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -19,6 +21,11 @@ type Config struct {
 	RedisURL     string
 	RedisDB      int
 	KafkaBrokers string
+
+	S3Endpoint  string
+	S3AccessKey string
+	S3SecretKey string
+	S3Bucket    string
 }
 
 type CourseComposite struct {
@@ -39,6 +46,9 @@ func NewCourseComposite(db *gorm.DB, cfg Config) (*CourseComposite, error) {
 		&entity.Attempt{},
 		&entity.AttemptSession{},
 		&postgres.Completion{},
+		&entity.CourseFile{},
+		&entity.LessonFile{},
+		&entity.ExerciseFile{},
 	); err != nil {
 		return nil, err
 	}
@@ -51,6 +61,18 @@ func NewCourseComposite(db *gorm.DB, cfg Config) (*CourseComposite, error) {
 	completionRepo := postgres.NewCompletionRepo(db)
 	matchingPairRepo := postgres.NewMatchingPairRepository(db)
 	questionOptionsRepo := postgres.NewQuestionOptionRepository(db)
+
+	s3Client, err := s3.NewS3Client(
+		cfg.S3Endpoint,
+		cfg.S3AccessKey,
+		cfg.S3SecretKey,
+		cfg.S3Bucket)
+	if err != nil {
+		return nil, err
+	}
+
+	fileS3Repo := s3Repo.NewFileS3Repository(s3Client)
+	fileS3UseCase := usecase.NewFileS3UseCase(fileS3Repo)
 
 	redisClient, err := redis.NewRedisClient(redis.Config{
 		Addr: cfg.RedisURL,
@@ -80,7 +102,7 @@ func NewCourseComposite(db *gorm.DB, cfg Config) (*CourseComposite, error) {
 	questionOptionUseCase := usecase.NewQuestionOptionUseCase(questionOptionsRepo)
 
 	v1.NewRouter(handler, courseUseCase, lessonUseCase, exerciseUseCase, questionUseCase, attemptUseCase, cfg.GatewayURL)
-	admin.NewRouter(handler, courseUseCase, lessonUseCase, exerciseUseCase, questionUseCase, matchingPairUseCase, questionOptionUseCase, "*")
+	admin.NewRouter(handler, courseUseCase, lessonUseCase, exerciseUseCase, questionUseCase, matchingPairUseCase, questionOptionUseCase, fileS3UseCase)
 	return &CourseComposite{
 		handler: handler,
 	}, nil

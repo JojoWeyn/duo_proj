@@ -8,6 +8,7 @@ import (
 
 type ExerciseRepository interface {
 	Create(ctx context.Context, course *entity.Exercise) error
+	AddFile(ctx context.Context, file *entity.ExerciseFile) error
 	GetByID(ctx context.Context, id uuid.UUID) (*entity.Exercise, error)
 	GetByLessonID(ctx context.Context, lessonID uuid.UUID) ([]*entity.Exercise, error)
 	Update(ctx context.Context, course *entity.Exercise) error
@@ -43,4 +44,15 @@ func (e *ExerciseUsecase) UpdateExercise(ctx context.Context, exercise *entity.E
 
 func (e *ExerciseUsecase) DeleteExercise(ctx context.Context, id uuid.UUID) error {
 	return e.repo.Delete(ctx, id)
+}
+
+func (e *ExerciseUsecase) AddFile(ctx context.Context, exerciseUUID uuid.UUID, title, fileUrl string) error {
+	file := entity.ExerciseFile{
+		UUID:         uuid.New(),
+		Title:        title,
+		FileURL:      fileUrl,
+		ExerciseUUID: exerciseUUID,
+	}
+
+	return e.repo.AddFile(ctx, &file)
 }

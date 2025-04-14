@@ -61,57 +61,46 @@ func (p *ProgressUseCase) GetStreak(ctx context.Context, userID uuid.UUID) (int,
 	}
 
 	entityType := "exercise"
-	// Собираем уникальные даты для указанного типа сущности
 	dateMap := make(map[string]bool)
 	for _, progress := range progresses {
-		// Фильтруем по типу сущности
 		if progress.EntityType == entityType {
 			dateStr := progress.CompletedAt.Format("2006-01-02")
 			dateMap[dateStr] = true
 		}
 	}
 
-	// Получаем даты из dateMap
 	var dates []time.Time
 	for dateStr := range dateMap {
 		date, _ := time.Parse("2006-01-02", dateStr)
 		dates = append(dates, date)
 	}
 
-	log.Println("Date map: ", dateMap)
-
-	// Добавляем текущий день, если на нем был прогресс
-	currentDate := time.Now().Truncate(24 * time.Hour) // Получаем текущую дату без времени
-	dateStr := currentDate.Format("2006-01-02")
-	if _, exists := dateMap[dateStr]; !exists {
-		// Добавляем только если еще нет этой даты в списке
-		dates = append(dates, currentDate)
-	}
-
-	log.Println("Date map with current day: ", dates)
-
-	// Сортируем даты
+	// Сортируем по возрастанию
 	sort.Slice(dates, func(i, j int) bool {
 		return dates[i].Before(dates[j])
 	})
 
-	// Печатаем даты, чтобы проверить их порядок
 	log.Println("Sorted dates: ", dates)
 
-	// Рассчитываем текущий стрик
-	currentStreak := 0
-	for i := len(dates) - 1; i > 0; i-- {
-		// Если день идет подряд с предыдущим
-		if dates[i].Sub(dates[i-1]).Hours() == 24 {
+	// Стрик только если есть активность сегодня
+	currentDate := time.Now().Truncate(24 * time.Hour)
+	dateStr := currentDate.Format("2006-01-02")
+	if !dateMap[dateStr] {
+		log.Println("No progress today — streak is 0")
+		return 0, nil
+	}
+
+	// Вычисляем стрик от сегодняшней даты назад
+	currentStreak := 1
+	for i := len(dates) - 2; i >= 0; i-- {
+		// Сравниваем с предыдущей датой
+		if currentDate.Sub(dates[i]).Hours() == float64(24*currentStreak) {
 			currentStreak++
 		} else {
-			// Прерывание стрика
 			break
 		}
 	}
 
-	// Печатаем текущий стрик
 	log.Println("Current streak: ", currentStreak)
-
 	return currentStreak, nil
 }

@@ -26,6 +26,7 @@ func (l *LessonRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.L
 
 	if err := l.db.WithContext(ctx).
 		Preload("Difficulty").
+		Preload("LessonFiles").
 		Where("uuid = ?", id).
 		First(&lesson).Error; err != nil {
 		return nil, err
