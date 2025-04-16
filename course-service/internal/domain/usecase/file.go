@@ -9,6 +9,7 @@ import (
 type FileS3Repository interface {
 	UploadFile(ctx context.Context, File *entity.File) (string, error)
 	ListFiles(ctx context.Context) ([]string, error)
+	DeleteFile(ctx context.Context, fileName string) error
 }
 
 type fileS3UseCase struct {
@@ -28,4 +29,8 @@ func (f *fileS3UseCase) UploadFile(ctx context.Context, file multipart.File, fil
 
 func (f *fileS3UseCase) ListFiles(ctx context.Context) ([]string, error) {
 	return f.fileS3Repo.ListFiles(ctx)
+}
+
+func (f *fileS3UseCase) DeleteFile(ctx context.Context, fileName string) error {
+	return f.fileS3Repo.DeleteFile(ctx, fileName)
 }

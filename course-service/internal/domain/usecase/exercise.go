@@ -13,6 +13,7 @@ type ExerciseRepository interface {
 	GetByLessonID(ctx context.Context, lessonID uuid.UUID) ([]*entity.Exercise, error)
 	Update(ctx context.Context, course *entity.Exercise) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	DeleteFile(ctx context.Context, id uuid.UUID) error
 }
 
 type ExerciseUsecase struct {
@@ -55,4 +56,8 @@ func (e *ExerciseUsecase) AddFile(ctx context.Context, exerciseUUID uuid.UUID, t
 	}
 
 	return e.repo.AddFile(ctx, &file)
+}
+
+func (e *ExerciseUsecase) DeleteFile(ctx context.Context, id uuid.UUID) error {
+	return e.repo.DeleteFile(ctx, id)
 }

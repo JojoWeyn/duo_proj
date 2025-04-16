@@ -18,6 +18,7 @@ type QuestionUseCase interface {
 	UpdateQuestion(ctx context.Context, question *entity.Question) error
 	DeleteQuestion(ctx context.Context, id uuid.UUID) error
 	AddImage(ctx context.Context, questionUUID uuid.UUID, title, fileUrl string) error
+	DeleteImage(ctx context.Context, id uuid.UUID) error
 }
 
 type ExerciseUseCase interface {
@@ -27,6 +28,7 @@ type ExerciseUseCase interface {
 	UpdateExercise(ctx context.Context, exercise *entity.Exercise) error
 	DeleteExercise(ctx context.Context, id uuid.UUID) error
 	AddFile(ctx context.Context, exerciseUUID uuid.UUID, title, fileUrl string) error
+	DeleteFile(ctx context.Context, id uuid.UUID) error
 }
 
 type LessonUseCase interface {
@@ -64,6 +66,7 @@ type QuestionOptionUseCase interface {
 type FileS3UseCase interface {
 	UploadFile(ctx context.Context, file multipart.File, fileName string, fileSize int64, fileType string) (string, error)
 	ListFiles(ctx context.Context) ([]string, error)
+	DeleteFile(ctx context.Context, fileName string) error
 }
 
 type adminRoutes struct {
@@ -111,8 +114,6 @@ func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase
 		h.POST("/matching-pair", r.createMatchingPair)
 		h.POST("/question-option", r.createQuestionOption)
 
-		h.POST("/file/add", r.addFile)
-
 		h.PATCH("/course/:id", r.updateCourse)
 		h.PATCH("/lesson/:id", r.updateLesson)
 		h.PATCH("/exercise/:id", r.updateExercise)
@@ -129,10 +130,44 @@ func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase
 
 		h.POST("/file/upload", r.uploadFile)
 		h.GET("/file/list", r.listFile)
+		h.POST("/file/add", r.addFile)
+		h.POST("/file/unpin", r.unpinFile)
+		h.DELETE("/file/delete", r.deleteFile)
 
 	}
 }
 
+func (r *adminRoutes) deleteFile(c *gin.Context) {
+	fileName := c.Query("file_name")
+	if err := r.fileS3UseCase.DeleteFile(c.Request.Context(), fileName); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, nil)
+}
+func (r *adminRoutes) unpinFile(c *gin.Context) {
+	entityType := c.Query("entity")
+	id := uuid.MustParse(c.Query("uuid"))
+
+	switch entityType {
+	case "exercise":
+		if err := r.exerciseUseCase.DeleteFile(c.Request.Context(), id); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, nil)
+
+	case "question":
+		if err := r.questionUseCase.DeleteImage(c.Request.Context(), id); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, nil)
+
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported entity type"})
+	}
+}
 func (r *adminRoutes) addFile(c *gin.Context) {
 	var req struct {
 		Title   string `json:"title"`

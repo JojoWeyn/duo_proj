@@ -16,6 +16,7 @@ type QuestionRepository interface {
 	GetByExerciseID(ctx context.Context, exerciseID uuid.UUID) ([]entity.Question, error)
 	Update(ctx context.Context, question *entity.Question) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	DeleteImage(ctx context.Context, id uuid.UUID) error
 }
 
 type Service interface {
@@ -201,4 +202,8 @@ func (q *QuestionUseCase) AddImage(ctx context.Context, questionUUID uuid.UUID, 
 	}
 
 	return q.repo.AddImage(ctx, &file)
+}
+
+func (q *QuestionUseCase) DeleteImage(ctx context.Context, id uuid.UUID) error {
+	return q.repo.DeleteImage(ctx, id)
 }

@@ -62,3 +62,7 @@ func (e *ExerciseRepository) Delete(ctx context.Context, id uuid.UUID) error {
 func (e *ExerciseRepository) AddFile(ctx context.Context, file *entity.ExerciseFile) error {
 	return e.db.WithContext(ctx).Create(file).Error
 }
+
+func (e *ExerciseRepository) DeleteFile(ctx context.Context, id uuid.UUID) error {
+	return e.db.WithContext(ctx).Delete(&entity.ExerciseFile{UUID: id}).Error
+}

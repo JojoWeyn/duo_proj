@@ -137,6 +137,8 @@ func main() {
 		protected.POST("/admin/file/upload", proxy.ProxyService(serviceURLs["course"], true))
 		protected.GET("/admin/file/list", proxy.ProxyService(serviceURLs["course"], true))
 		protected.POST("/admin/file/add", proxy.ProxyService(serviceURLs["course"], true))
+		protected.POST("/admin/file/unpin", proxy.ProxyService(serviceURLs["course"], true))
+		protected.DELETE("/admin/file/delete", proxy.ProxyService(serviceURLs["course"], true))
 	}
 
 	port := getEnv("PORT", "3211")

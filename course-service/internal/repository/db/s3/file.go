@@ -64,3 +64,7 @@ func (s *FileS3Repo) ListFiles(ctx context.Context) ([]string, error) {
 
 	return fileURLs, nil
 }
+
+func (s *FileS3Repo) DeleteFile(ctx context.Context, fileName string) error {
+	return s.StorageS3.Client.RemoveObject(ctx, s.StorageS3.Bucket, fileName, minio.RemoveObjectOptions{})
+}
