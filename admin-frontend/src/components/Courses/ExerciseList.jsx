@@ -1,13 +1,27 @@
 import { useState, useEffect } from 'react';
 import { exercisesAPI, lessonsAPI } from '../../api/api';
 import { useParams, useNavigate } from 'react-router-dom';
+import FileAttachModal from '../Files/FileAttachModal'
 
 export const ExercisesList = () => {
   const { uuid } = useParams();
   const navigate = useNavigate();
   const [exercises, setExercises] = useState([]);
-  const [error, setError] = useState(''); // Состояние для ошибок при удалении
+  const [error, setError] = useState(''); 
 
+  const [showAttachModal, setShowAttachModal] = useState(false);
+  const [selectedQuestionUuid, setSelectedQuestionUuid] = useState(null);
+
+  const openAttachModal = (questionUuid) => {
+    setSelectedQuestionUuid(questionUuid);
+    setShowAttachModal(true);
+  };
+
+  const closeAttachModal = () => {
+    setShowAttachModal(false);
+    setSelectedQuestionUuid(null);
+  };
+  
   useEffect(() => {
     const loadExercises = async () => {
       try {
@@ -75,6 +89,12 @@ export const ExercisesList = () => {
       <div className='lesson-header'>
         <h3>Упражнение {exercise.order}</h3>
         <span className="lesson-title">{exercise.title}</span>
+        <button onClick={(event) => {
+    event.stopPropagation(); // Предотвращает всплытие события
+    openAttachModal(exercise.uuid);
+}}>
+    📎 Прикрепить файл
+</button>
       </div>
 
       <p style={{ whiteSpace: 'pre-line' }}>{exercise.description.replace(/\\n|\n/g, '\n')}</p>
@@ -94,7 +114,7 @@ export const ExercisesList = () => {
               );
             }
             // Если это изображение
-            if (file.file_url.match(/\.(jpeg|jpg|gif|png)$/)) {
+            if (file.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/)) {
               return (
                 <div key={file.uuid} className="file-preview">
                   <img src={file.file_url} alt={file.title} style={{ width: '100%', height: 'auto' }} />
@@ -154,6 +174,14 @@ export const ExercisesList = () => {
       >
         + Добавить упражнение
       </button>
+      {showAttachModal && (
+        <FileAttachModal
+          show={showAttachModal}
+          handleClose={closeAttachModal}
+          entity={"exercise"}
+          entityUuid={selectedQuestionUuid}
+        />
+      )}
     </div>
   );
 };

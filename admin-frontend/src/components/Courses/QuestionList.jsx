@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { coursesAPI, exercisesAPI, questionsAPI } from '../../api/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import trashIcon from '../../assets/trash.svg';
+import FileAttachModal from '../Files/FileAttachModal'
 
 export const QuestionList = () => {
   const { uuid } = useParams();
@@ -11,6 +12,9 @@ export const QuestionList = () => {
   const [newOption, setNewOption] = useState({});
   const [newPair, setNewPair] = useState({ left_text: '', right_text: '' });
 
+  const [showAttachModal, setShowAttachModal] = useState(false);
+  const [selectedQuestionUuid, setSelectedQuestionUuid] = useState(null);
+  
   useEffect(() => {
     const loadQuestions = async () => {
       try {
@@ -65,6 +69,16 @@ export const QuestionList = () => {
     loadQuestions();
 
   }, [uuid]);
+
+  const openAttachModal = (questionUuid) => {
+    setSelectedQuestionUuid(questionUuid);
+    setShowAttachModal(true);
+  };
+
+  const closeAttachModal = () => {
+    setShowAttachModal(false);
+    setSelectedQuestionUuid(null);
+  };
 
   const handleNewOptionSubmit = async (questionUuid) => {
     try {
@@ -170,13 +184,17 @@ export const QuestionList = () => {
               <button className="delete-button" onClick={() => handleDeleteQuestion(question.uuid)}>
                 Удалить вопрос
               </button>
+
+              <button onClick={() => openAttachModal(question.uuid)}>
+            📎 Прикрепить файл
+              </button>
+
             </div>
             <p className="lesson-description">{question.type.title}</p>
 
             {question?.images?.length > 0 && (
         <div className="exercise-files">
           {question.images.map((file) => {
-            // Проверка типа файла, если это видео
             if (file.image_url.endsWith('.mp4')) {
               return (
                 <div key={file.uuid} className="file-preview">
@@ -188,7 +206,7 @@ export const QuestionList = () => {
               );
             }
             // Если это изображение
-            if (file.image_url.match(/\.(jpeg|jpg|gif|png)$/)) {
+            if (file.image_url.match(/\.(jpeg|jpg|gif|png|webp)$/)) {
               return (
                 <div key={file.uuid} className="file-preview">
                   <img src={file.image_url} alt={file.title} style={{ width: '100%', height: 'auto' }} />
@@ -210,7 +228,6 @@ export const QuestionList = () => {
                 </div>
               );
             }
-            // В случае других типов файлов, можно просто отображать ссылку
             return (
               <div key={file.uuid} className="file-preview">
                 <a href={file.file_url} target="_blank" rel="noreferrer" className="exercise-file-link">
@@ -233,10 +250,9 @@ export const QuestionList = () => {
                       {option.text} {option.is_correct ? '✔️' : '❌'}
                     </div>
                     <button
-                      className="delete-button"
                       onClick={() => handleDeleteOption(question.uuid, option.uuid)}
                     >
-                     <img src={trashIcon} alt="" className='icon-small'/>
+                     <img src={trashIcon} alt="" className='icon-medium'/>
                     </button>
                   </div>
                 ))}
@@ -325,6 +341,17 @@ export const QuestionList = () => {
       <button className="create-button" onClick={() => navigate(`/exercises/${uuid}/question/create`)}>
         + Добавить вопрос
       </button>
+
+      {showAttachModal && (
+        <FileAttachModal
+          show={showAttachModal}
+          handleClose={closeAttachModal}
+          entity={"question"}
+          entityUuid={selectedQuestionUuid}
+        />
+      )}
+
     </div>
+    
   );
 };

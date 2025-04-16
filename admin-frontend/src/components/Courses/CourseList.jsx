@@ -42,7 +42,7 @@ export const CourseList = () => {
             <p>{course.description}</p>
               <div className="card-meta">
                 <span>Сложность: {course.difficulty.title}</span>
-
+                <span>Тип: {course.course_type.title}</span>
               </div>
             </div> 
             <div className="card-buttons">

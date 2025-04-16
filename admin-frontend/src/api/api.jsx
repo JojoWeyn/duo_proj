@@ -58,8 +58,19 @@ export const questionsAPI = {
 };
 
 export const filesAPI = {
-  getList: () => api.get('/v1/admin/file/list')
-}
+  getList: () => api.get('/v1/admin/file/list'),
+  addFile: (entity, uuid, data) => api.post(`/v1/admin/file/add`, data, {
+    params: {
+      entity,
+      uuid
+    }
+  }),
+  uploadFile: (data) => api.post('/v1/admin/file/upload', data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
+};
 
 export const usersAPI = {
   getAll: (offset = 0, limit = 50) => api.get(`/v1/admin/users`, {
