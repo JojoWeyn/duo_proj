@@ -65,11 +65,22 @@ export const filesAPI = {
       uuid
     }
   }),
+  unpinFile: (entity, uuid) => api.post(`/v1/admin/file/unpin`, {},{
+    params: {
+      entity: entity,
+      uuid: uuid
+    }
+  }),
   uploadFile: (data) => api.post('/v1/admin/file/upload', data, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   }),
+  deleteFile: (file) => api.delete('/v1/admin/file/delete', {
+    params: {
+      file_name: file
+    }
+  })
 };
 
 export const usersAPI = {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { exercisesAPI, lessonsAPI } from '../../api/api';
+import { exercisesAPI, filesAPI, lessonsAPI } from '../../api/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import FileAttachModal from '../Files/FileAttachModal'
 
@@ -60,6 +60,27 @@ export const ExercisesList = () => {
     loadExercises();
   }, [uuid]);
   
+  const handleUnpinFile = async (entity, uuid) => {
+    const isConfirmed = window.confirm("Вы уверены, что хотите открепить этот файл?");
+    if (!isConfirmed) return;
+    try {
+      await filesAPI.unpinFile(entity, uuid);
+      setExercises((prevExercises) =>
+        prevExercises.map((exercise) => {
+          if (exercise.uuid === selectedQuestionUuid) {
+            return {
+              ...exercise,
+              exercise_files: exercise.exercise_files.filter((file) => file.uuid !== uuid),
+            };
+          }
+          return exercise;
+        })
+      );
+    } catch (error) {
+      console.error('Error unpinning file:', error);
+      setError('Ошибка при откреплении файла!');
+    }
+  };
 
   // Функция для удаления упражнения
   const handleDeleteExercise = async (exerciseUuid) => {
@@ -90,7 +111,7 @@ export const ExercisesList = () => {
         <h3>Упражнение {exercise.order}</h3>
         <span className="lesson-title">{exercise.title}</span>
         <button onClick={(event) => {
-    event.stopPropagation(); // Предотвращает всплытие события
+    event.stopPropagation();
     openAttachModal(exercise.uuid);
 }}>
     📎 Прикрепить файл
@@ -110,6 +131,13 @@ export const ExercisesList = () => {
                     <source src={file.file_url} type="video/mp4" />
                     Ваш браузер не поддерживает воспроизведение видео.
                   </video>
+                  <button onClick={(event) => {
+                  event.stopPropagation();
+                  handleUnpinFile('exercise', file.uuid)
+                 }
+                  }>
+                          Открепить
+                        </button>
                 </div>
               );
             }
@@ -118,6 +146,13 @@ export const ExercisesList = () => {
               return (
                 <div key={file.uuid} className="file-preview">
                   <img src={file.file_url} alt={file.title} style={{ width: '100%', height: 'auto' }} />
+                  <button onClick={(event) => {
+                  event.stopPropagation();
+                  handleUnpinFile('exercise', file.uuid)
+                 }
+                  }>
+                          Открепить
+                        </button>
                 </div>
               );
             }
@@ -133,6 +168,13 @@ export const ExercisesList = () => {
                   >
                     Этот браузер не поддерживает просмотр PDF.
                   </iframe>
+                  <button onClick={(event) => {
+                  event.stopPropagation();
+                  handleUnpinFile('exercise', file.uuid)
+                 }
+                  }>
+                          Открепить
+                        </button>
                 </div>
               );
             }
@@ -142,7 +184,16 @@ export const ExercisesList = () => {
                 <a href={file.file_url} target="_blank" rel="noreferrer" className="exercise-file-link">
                   📎 {file.title}
                 </a>
+                 <button onClick={(event) => {
+                  event.stopPropagation();
+                  handleUnpinFile('exercise', file.uuid)
+                 }
+                  }>
+                          Открепить
+                        </button>
+               
               </div>
+              
             );
           })}
         </div>
