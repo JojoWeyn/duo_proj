@@ -32,8 +32,13 @@ func newExerciseRoutes(handler *gin.RouterGroup, exerciseUseCase ExerciseUseCase
 
 func (h *exerciseRoutes) getAllExercises(c *gin.Context) {
 	id := c.Param("id")
+	lessonID, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID format"})
+		return
+	}
 
-	exercises, err := h.exerciseUseCase.GetExercisesByLessonID(c.Request.Context(), uuid.MustParse(id))
+	exercises, err := h.exerciseUseCase.GetExercisesByLessonID(c.Request.Context(), lessonID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -43,7 +48,13 @@ func (h *exerciseRoutes) getAllExercises(c *gin.Context) {
 
 func (h *exerciseRoutes) getExerciseByID(c *gin.Context) {
 	id := c.Param("id")
-	exercise, err := h.exerciseUseCase.GetExerciseByID(c.Request.Context(), uuid.MustParse(id))
+	exerciseID, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID format"})
+		return
+	}
+
+	exercise, err := h.exerciseUseCase.GetExerciseByID(c.Request.Context(), exerciseID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return

@@ -10,7 +10,7 @@ import (
 )
 
 type TokenStatus struct {
-	IsBlacklisted string `json:"is_blacklisted"`
+	IsBlacklisted bool `json:"is_blacklisted"`
 }
 
 func AuthMiddleware(identityServiceURL string) gin.HandlerFunc {

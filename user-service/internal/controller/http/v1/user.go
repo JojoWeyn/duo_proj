@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/dto"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/gin-gonic/gin"
@@ -234,4 +235,12 @@ func (r *userRoutes) updateAvatar(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"avatar_url": avatarURL})
+}
+
+func extractUserUUID(c *gin.Context) (uuid.UUID, error) {
+	sub := c.GetHeader("X-User-UUID")
+	if sub == "" {
+		return uuid.Nil, errors.New("X-User-UUID header missing")
+	}
+	return uuid.Parse(sub)
 }

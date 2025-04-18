@@ -44,8 +44,14 @@ func newQuestionRoutes(handler *gin.RouterGroup, questionUseCase QuestionUseCase
 }
 
 func (q *questionRoutes) getQuestionByID(c *gin.Context) {
-	id := c.Param("id")
-	question, err := q.questionUseCase.GetQuestionByID(c.Request.Context(), uuid.MustParse(id))
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+
+	question, err := q.questionUseCase.GetQuestionByID(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -97,8 +103,14 @@ func (q *questionRoutes) getQuestionByID(c *gin.Context) {
 }
 
 func (q *questionRoutes) getAllQuestions(c *gin.Context) {
-	id := c.Param("id")
-	questions, err := q.questionUseCase.GetQuestionsByExerciseID(c.Request.Context(), uuid.MustParse(id))
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+
+	questions, err := q.questionUseCase.GetQuestionsByExerciseID(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return

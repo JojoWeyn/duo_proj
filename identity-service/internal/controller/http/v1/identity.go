@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"github.com/JojoWeyn/duo-proj/identity-service/internal/domain/entity"
 	"log"
 	"net/http"
@@ -57,14 +58,11 @@ func newIdentityRoutes(handler *gin.RouterGroup, verificationService Verificatio
 }
 
 func (r *identityRoutes) getIdentity(c *gin.Context) {
-	token := c.GetHeader("Authorization")
-
-	if token == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no token provided"})
+	token, err := extractToken(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	token = strings.TrimPrefix(token, "Bearer ")
 
 	userUUID, err := r.identityUseCase.ValidateToken(c.Request.Context(), token, false)
 	if err != nil {
@@ -151,36 +149,22 @@ func (r *identityRoutes) resetPassword(c *gin.Context) {
 }
 
 func (r *identityRoutes) checkToken(c *gin.Context) {
-	token := c.GetHeader("Authorization")
-
-	if token == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no token provided"})
+	token, err := extractToken(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	token = strings.TrimPrefix(token, "Bearer ")
-
-	validateToken := func(token string, checkRefresh bool) (string, error) {
-		isBlacklisted, err := r.identityUseCase.ValidateToken(c.Request.Context(), token, checkRefresh)
-		if err != nil {
-			return "", err
-		}
-		return isBlacklisted, nil
-	}
-
-	isBlacklisted, err := validateToken(token, false)
+	_, err = r.identityUseCase.ValidateToken(c.Request.Context(), token, false)
 	if err != nil {
-		isBlacklisted, err = validateToken(token, true)
+		_, err = r.identityUseCase.ValidateToken(c.Request.Context(), token, true)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusUnauthorized, gin.H{"is_blacklisted": true})
 			return
 		}
 	}
-	if isBlacklisted == "" {
-		c.JSON(http.StatusOK, gin.H{"is_blacklisted": "true"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"is_blacklisted": "false"})
+
+	c.JSON(http.StatusOK, gin.H{"is_blacklisted": false})
 }
 
 func (r *identityRoutes) register(c *gin.Context) {
@@ -239,12 +223,11 @@ func (r *identityRoutes) refresh(c *gin.Context) {
 }
 
 func (r *identityRoutes) logout(c *gin.Context) {
-	token := c.GetHeader("Authorization")
-	if token == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no token provided"})
+	token, err := extractToken(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	token = strings.TrimPrefix(token, "Bearer ")
 
 	if err := r.identityUseCase.Logout(c.Request.Context(), token); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -252,4 +235,23 @@ func (r *identityRoutes) logout(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
+}
+
+func extractToken(c *gin.Context) (string, error) {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		return "", errors.New("authorization header is missing")
+	}
+
+	const bearerPrefix = "Bearer "
+	if !strings.HasPrefix(authHeader, bearerPrefix) {
+		return "", errors.New("invalid authorization header format")
+	}
+
+	token := strings.TrimPrefix(authHeader, bearerPrefix)
+	if token == "" {
+		return "", errors.New("token is empty")
+	}
+
+	return token, nil
 }

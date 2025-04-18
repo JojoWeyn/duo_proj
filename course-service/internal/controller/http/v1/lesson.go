@@ -30,20 +30,34 @@ func newLessonRoutes(handler *gin.RouterGroup, lessonUseCase LessonUseCase) {
 }
 
 func (r *lessonRoutes) getLessonByID(c *gin.Context) {
-	id := c.Param("id")
-	lesson, err := r.lessonUseCase.GetLessonByID(c.Request.Context(), uuid.MustParse(id))
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+
+	lesson, err := r.lessonUseCase.GetLessonByID(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, lesson)
 }
 
 func (r *lessonRoutes) getAllLessons(c *gin.Context) {
-	id := c.Param("id")
-	lessons, err := r.lessonUseCase.GetLessonsByCourseID(c.Request.Context(), uuid.MustParse(id))
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+
+	lessons, err := r.lessonUseCase.GetLessonsByCourseID(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, lessons)

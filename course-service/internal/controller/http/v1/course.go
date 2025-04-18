@@ -35,6 +35,7 @@ func (r *courseRoutes) getCourseByID(c *gin.Context) {
 	course, err := r.courseUseCase.GetCourseByID(c.Request.Context(), uuid.MustParse(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	courseDTO := dto.CourseInfoDTO{
@@ -54,9 +55,10 @@ func (r *courseRoutes) getAllCourses(c *gin.Context) {
 	courses, err := r.courseUseCase.GetAllCourses(c.Request.Context(), 2)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
-	var coursesDTO []dto.CourseSmallDTO
+	coursesDTO := make([]dto.CourseSmallDTO, 0, len(courses))
 	for _, course := range courses {
 		coursesDTO = append(coursesDTO, dto.CourseSmallDTO{
 			UUID:         course.UUID,
