@@ -87,7 +87,10 @@ func (r *UserRepository) GetLeaderboard(ctx context.Context, limit, offset int) 
 }
 
 func (r *UserRepository) Update(ctx context.Context, user *entity.User) error {
-	return r.db.WithContext(ctx).Save(user).Error
+	return r.db.WithContext(ctx).
+		Model(&entity.User{}).
+		Where("uuid = ?", user.UUID).
+		Updates(user).Error
 }
 
 func (r *UserRepository) Delete(ctx context.Context, uuid uuid.UUID) error {

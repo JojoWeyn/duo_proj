@@ -7,6 +7,7 @@ import (
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/dto"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/google/uuid"
+	"log"
 )
 
 type AchievementRepository interface {
@@ -42,7 +43,10 @@ func (uc *AchievementUseCase) CheckAchievements(ctx context.Context, userID uuid
 
 	for _, ach := range achievements {
 		var cond entity.Condition
-		json.Unmarshal([]byte(ach.Condition), &cond)
+		if err := json.Unmarshal([]byte(ach.Condition), &cond); err != nil {
+			log.Printf("failed to unmarshal condition for achievement %d: %v", ach.ID, err)
+			continue
+		}
 
 		if cond.Action != "" && cond.Action == action {
 			uc.checkSimpleCounter(ctx, userID, ach, cond)

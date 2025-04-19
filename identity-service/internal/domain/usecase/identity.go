@@ -82,15 +82,12 @@ func (uc *IdentityUseCase) RefreshToken(ctx context.Context, refreshToken string
 		return nil, err
 	}
 
-	accessToken, newRefreshToken, err := uc.tokenService.GenerateTokenPair(userID, userRole)
+	tokens, err := uc.generateTokens(userID, userRole)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Tokens{
-		AccessToken:  accessToken,
-		RefreshToken: newRefreshToken,
-	}, nil
+	return tokens, nil
 }
 
 func (uc *IdentityUseCase) Register(ctx context.Context, email, password string) error {
@@ -141,7 +138,7 @@ func (uc *IdentityUseCase) ConfirmEmail(ctx context.Context, email, code string)
 		log.Printf("Failed to send user created event: %v", err)
 	}
 
-	return uc.identityRepo.Create(ctx, identity)
+	return nil
 
 }
 
@@ -182,11 +179,11 @@ func (uc *IdentityUseCase) Login(ctx context.Context, email, password string) (*
 		return nil, errors.New("invalid email or password")
 	}
 
-	if identity.IsConfirmEmail == false {
+	if !identity.IsConfirmEmail {
 		return nil, errors.New("emails is not confirmed")
 	}
 
-	accessToken, refreshToken, err := uc.tokenService.GenerateTokenPair(identity.UserUUID.String(), identity.Role)
+	tokens, err := uc.generateTokens(identity.UserUUID.String(), identity.Role)
 	if err != nil {
 		return nil, err
 	}
@@ -197,21 +194,17 @@ func (uc *IdentityUseCase) Login(ctx context.Context, email, password string) (*
 		}
 	}()
 
-	return &Tokens{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-	}, nil
+	return tokens, nil
 
 }
 
 func (uc *IdentityUseCase) ResetPassword(ctx context.Context, email, newPassword string) error {
 	identity, err := uc.identityRepo.FindByEmail(ctx, email)
 	if err != nil {
-		return errors.New("user is not found")
+		return errors.New("user not found")
 	}
 
-	err = entity.ValidatePassword(newPassword)
-	if err != nil {
+	if err := entity.ValidatePassword(newPassword); err != nil {
 		return err
 	}
 
@@ -235,4 +228,12 @@ func (uc *IdentityUseCase) GetByUserUUID(ctx context.Context, userUUID string) (
 	}
 
 	return identity, nil
+}
+
+func (uc *IdentityUseCase) generateTokens(userID, userRole string) (*Tokens, error) {
+	accessToken, refreshToken, err := uc.tokenService.GenerateTokenPair(userID, userRole)
+	if err != nil {
+		return nil, err
+	}
+	return &Tokens{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }

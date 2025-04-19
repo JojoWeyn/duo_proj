@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"gorm.io/gorm/clause"
 	"time"
 
 	"github.com/JojoWeyn/duo-proj/identity-service/internal/domain/entity"
@@ -19,7 +20,9 @@ func NewTokenRepository(db *gorm.DB) *TokenRepository {
 }
 
 func (r *TokenRepository) BlacklistToken(ctx context.Context, token *entity.BlacklistedToken) error {
-	return r.db.WithContext(ctx).Create(token).Error
+	return r.db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(token).Error
 }
 
 func (r *TokenRepository) IsBlacklisted(ctx context.Context, token string) (bool, error) {

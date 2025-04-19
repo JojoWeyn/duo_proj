@@ -18,7 +18,7 @@ func NewProgressRepository(db *gorm.DB) *ProgressRepository {
 }
 
 func (p *ProgressRepository) Create(ctx context.Context, progress *entity.Progress) error {
-	return p.db.WithContext(ctx).Create(&progress).Error
+	return p.db.WithContext(ctx).Create(progress).Error
 }
 
 func (p *ProgressRepository) GetByEntityUUID(ctx context.Context, userUUID, entityUUID uuid.UUID) (*entity.Progress, error) {
@@ -40,4 +40,17 @@ func (p *ProgressRepository) GetProgress(ctx context.Context, userUUID uuid.UUID
 	}
 
 	return progresses, nil
+}
+
+func (p *ProgressRepository) Update(ctx context.Context, progress *entity.Progress) error {
+	return p.db.WithContext(ctx).
+		Model(&entity.Progress{}).
+		Where("user_uuid = ? AND entity_uuid = ?", progress.UserUUID, progress.EntityUUID).
+		Updates(progress).Error
+}
+
+func (p *ProgressRepository) Delete(ctx context.Context, userUUID, entityUUID uuid.UUID) error {
+	return p.db.WithContext(ctx).
+		Where("user_uuid = ? AND entity_uuid = ?", userUUID, entityUUID).
+		Delete(&entity.Progress{}).Error
 }

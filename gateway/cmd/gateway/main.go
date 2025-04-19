@@ -17,6 +17,13 @@ import (
 	"golang.org/x/time/rate"
 )
 
+type route struct {
+	Method    string
+	Path      string
+	Service   string
+	Protected bool
+}
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("Warning: .env file not found")
@@ -46,103 +53,100 @@ func main() {
 
 	refreshLimiter := rate.NewLimiter(rate.Every(1*time.Second), 1)
 
-	public := router.Group("/v1")
-	{
-		public.POST("/auth/register", proxy.ProxyService(serviceURLs["identity"], false))
-		public.POST("/auth/login", proxy.ProxyService(serviceURLs["identity"], false))
-		public.POST("/auth/refresh", middleware.RateLimitMiddleware(refreshLimiter), proxy.ProxyService(serviceURLs["identity"], false))
-		public.POST("/auth/password/reset", middleware.RateLimitMiddleware(refreshLimiter), proxy.ProxyService(serviceURLs["identity"], false))
-		public.POST("/auth/verification/code", proxy.ProxyService(serviceURLs["identity"], false))
-		public.POST("/auth/verification/email", proxy.ProxyService(serviceURLs["identity"], false))
-	}
-
+	public := router.Group("/v1", middleware.RateLimitMiddleware(refreshLimiter))
 	protected := router.Group("/v1", middleware.AuthMiddleware(serviceURLs["identity"]))
-	{
-		protected.POST("/auth/logout", proxy.ProxyService(serviceURLs["identity"], false))
-		protected.GET("/auth/token/status", proxy.ProxyService(serviceURLs["identity"], false))
-		protected.GET("/auth/me", proxy.ProxyService(serviceURLs["identity"], false))
 
-		userEndpointsGET := []string{
-			"/users/:uuid",
-			"/users/all",
-			"/users/me",
-			"/users/achievements/:uuid",
-			"/achievements/list",
-			"/users/me/progress",
-			"/users/leaderboard",
-			"/users/me/streak",
-		}
-		for _, endpoint := range userEndpointsGET {
-			protected.GET(endpoint, proxy.ProxyService(serviceURLs["user"], true))
-		}
-		protected.PATCH("/users/me", proxy.ProxyService(serviceURLs["user"], true))
-		protected.POST("/users/me/avatar", proxy.ProxyService(serviceURLs["user"], true))
-
-		courseEndpointsGET := []string{
-			"/course/list",
-			"/course/:uuid/info",
-			"/course/:uuid/content",
-			"/lesson/:uuid/info",
-			"/lesson/:uuid/content",
-			"/exercise/:uuid/info",
-			"/question/:uuid/info",
-			"/exercise/:uuid/question",
-		}
-		for _, endpoint := range courseEndpointsGET {
-			protected.GET(endpoint, proxy.ProxyService(serviceURLs["course"], true))
-		}
-		protected.POST("/question/:uuid/check", proxy.ProxyService(serviceURLs["course"], true))
-		protected.POST("/attempts/start/:exercise_id", proxy.ProxyService(serviceURLs["course"], true))
-		protected.POST("/attempts/answer", proxy.ProxyService(serviceURLs["course"], true))
-		protected.POST("/attempts/finish", proxy.ProxyService(serviceURLs["course"], true))
-
-		protected.GET("/admin/course/list", proxy.ProxyService(serviceURLs["course"], true))
-		protected.GET("/admin/course/:course_id/lesson", proxy.ProxyService(serviceURLs["course"], true))
-		protected.GET("/admin/lesson/:lesson_id/exercise", proxy.ProxyService(serviceURLs["course"], true))
-		protected.GET("/admin/exercise/:exercise_id/question", proxy.ProxyService(serviceURLs["course"], true))
-		protected.GET("/admin/question/:question_id/question-option", proxy.ProxyService(serviceURLs["course"], true))
-		protected.GET("/admin/question/:question_id/matching-pair", proxy.ProxyService(serviceURLs["course"], true))
-
-		protected.GET("/admin/users", proxy.ProxyService(serviceURLs["user"], true))
-		protected.DELETE("/admin/users/:uuid", proxy.ProxyService(serviceURLs["user"], true))
-
-		protected.GET("/admin/course/:course_id", proxy.ProxyService(serviceURLs["course"], true))
-		protected.GET("/admin/lesson/:lesson_id", proxy.ProxyService(serviceURLs["course"], true))
-		protected.GET("/admin/exercise/:exercise_id", proxy.ProxyService(serviceURLs["course"], true))
-		protected.GET("/admin/question/:question_id", proxy.ProxyService(serviceURLs["course"], true))
-		protected.GET("/admin/question-option/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-		protected.GET("/admin/matching-pair/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-
-		protected.POST("/admin/course", proxy.ProxyService(serviceURLs["course"], true))
-		protected.POST("/admin/lesson", proxy.ProxyService(serviceURLs["course"], true))
-		protected.POST("/admin/exercise", proxy.ProxyService(serviceURLs["course"], true))
-		protected.POST("/admin/question", proxy.ProxyService(serviceURLs["course"], true))
-		protected.POST("/admin/question-option", proxy.ProxyService(serviceURLs["course"], true))
-		protected.POST("/admin/matching-pair", proxy.ProxyService(serviceURLs["course"], true))
-
-		protected.PATCH("/admin/course/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-		protected.PATCH("/admin/lesson/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-		protected.PATCH("/admin/exercise/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-		protected.PATCH("/admin/question/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-		protected.PATCH("/admin/question-option/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-		protected.PATCH("/admin/matching-pair/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-
-		protected.DELETE("/admin/course/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-		protected.DELETE("/admin/lesson/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-		protected.DELETE("/admin/exercise/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-		protected.DELETE("/admin/question/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-		protected.DELETE("/admin/question-option/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-		protected.DELETE("/admin/matching-pair/:uuid", proxy.ProxyService(serviceURLs["course"], true))
-
-		protected.POST("/admin/file/upload", proxy.ProxyService(serviceURLs["course"], true))
-		protected.GET("/admin/file/list", proxy.ProxyService(serviceURLs["course"], true))
-		protected.POST("/admin/file/add", proxy.ProxyService(serviceURLs["course"], true))
-		protected.POST("/admin/file/unpin", proxy.ProxyService(serviceURLs["course"], true))
-		protected.DELETE("/admin/file/delete", proxy.ProxyService(serviceURLs["course"], true))
+	publicRoutes := []route{
+		{"POST", "/auth/register", "identity", false},
+		{"POST", "/auth/login", "identity", false},
+		{"POST", "/auth/refresh", "identity", false},
+		{"POST", "/auth/password/reset", "identity", false},
+		{"POST", "/auth/verification/code", "identity", false},
+		{"POST", "/auth/verification/email", "identity", false},
 	}
+
+	protectedRoutes := []route{
+		{"POST", "/auth/logout", "identity", false},
+		{"GET", "/auth/token/status", "identity", false},
+		{"GET", "/auth/me", "identity", false},
+
+		// User
+		{"GET", "/users/:uuid", "user", true},
+		{"GET", "/users/all", "user", true},
+		{"GET", "/users/me", "user", true},
+		{"GET", "/users/achievements/:uuid", "user", true},
+		{"GET", "/achievements/list", "user", true},
+		{"GET", "/users/me/progress", "user", true},
+		{"GET", "/users/leaderboard", "user", true},
+		{"GET", "/users/me/streak", "user", true},
+		{"PATCH", "/users/me", "user", true},
+		{"POST", "/users/me/avatar", "user", true},
+
+		// Course
+		{"GET", "/course/list", "course", true},
+		{"GET", "/course/:uuid/info", "course", true},
+		{"GET", "/course/:uuid/content", "course", true},
+		{"GET", "/lesson/:uuid/info", "course", true},
+		{"GET", "/lesson/:uuid/content", "course", true},
+		{"GET", "/exercise/:uuid/info", "course", true},
+		{"GET", "/question/:uuid/info", "course", true},
+		{"GET", "/exercise/:uuid/question", "course", true},
+		{"POST", "/question/:uuid/check", "course", true},
+		{"POST", "/attempts/start/:exercise_id", "course", true},
+		{"POST", "/attempts/answer", "course", true},
+		{"POST", "/attempts/finish", "course", true},
+
+		// Admin
+		{"GET", "/admin/users", "user", true},
+		{"DELETE", "/admin/users/:uuid", "user", true},
+
+		{"GET", "/admin/course/list", "course", true},
+		{"GET", "/admin/course/:course_id/lesson", "course", true},
+		{"GET", "/admin/lesson/:lesson_id/exercise", "course", true},
+		{"GET", "/admin/exercise/:exercise_id/question", "course", true},
+		{"GET", "/admin/question/:question_id/question-option", "course", true},
+		{"GET", "/admin/question/:question_id/matching-pair", "course", true},
+
+		{"GET", "/admin/course/:course_id", "course", true},
+		{"GET", "/admin/lesson/:lesson_id", "course", true},
+		{"GET", "/admin/exercise/:exercise_id", "course", true},
+		{"GET", "/admin/question/:question_id", "course", true},
+		{"GET", "/admin/question-option/:uuid", "course", true},
+		{"GET", "/admin/matching-pair/:uuid", "course", true},
+
+		{"POST", "/admin/course", "course", true},
+		{"POST", "/admin/lesson", "course", true},
+		{"POST", "/admin/exercise", "course", true},
+		{"POST", "/admin/question", "course", true},
+		{"POST", "/admin/question-option", "course", true},
+		{"POST", "/admin/matching-pair", "course", true},
+
+		{"PATCH", "/admin/course/:uuid", "course", true},
+		{"PATCH", "/admin/lesson/:uuid", "course", true},
+		{"PATCH", "/admin/exercise/:uuid", "course", true},
+		{"PATCH", "/admin/question/:uuid", "course", true},
+		{"PATCH", "/admin/question-option/:uuid", "course", true},
+		{"PATCH", "/admin/matching-pair/:uuid", "course", true},
+
+		{"DELETE", "/admin/course/:uuid", "course", true},
+		{"DELETE", "/admin/lesson/:uuid", "course", true},
+		{"DELETE", "/admin/exercise/:uuid", "course", true},
+		{"DELETE", "/admin/question/:uuid", "course", true},
+		{"DELETE", "/admin/question-option/:uuid", "course", true},
+		{"DELETE", "/admin/matching-pair/:uuid", "course", true},
+
+		// File Admin
+		{"POST", "/admin/file/upload", "course", true},
+		{"GET", "/admin/file/list", "course", true},
+		{"POST", "/admin/file/add", "course", true},
+		{"POST", "/admin/file/unpin", "course", true},
+		{"DELETE", "/admin/file/delete", "course", true},
+	}
+
+	registerRoutes(public, proxy, publicRoutes, serviceURLs)
+	registerRoutes(protected, proxy, protectedRoutes, serviceURLs)
 
 	port := getEnv("PORT", "3211")
-
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start server: %s", err.Error())
 	}
@@ -177,4 +181,20 @@ func loadPublicKey(path string) (*rsa.PublicKey, error) {
 	}
 
 	return publicKey, nil
+}
+
+func registerRoutes(group *gin.RouterGroup, proxy *v1.ProxyHandler, routes []route, services map[string]string) {
+	for _, r := range routes {
+		handler := proxy.ProxyService(services[r.Service], r.Protected)
+		switch r.Method {
+		case "GET":
+			group.GET(r.Path, handler)
+		case "POST":
+			group.POST(r.Path, handler)
+		case "PATCH":
+			group.PATCH(r.Path, handler)
+		case "DELETE":
+			group.DELETE(r.Path, handler)
+		}
+	}
 }

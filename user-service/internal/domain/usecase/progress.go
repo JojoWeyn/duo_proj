@@ -37,11 +37,7 @@ func (p *ProgressUseCase) GetProgress(ctx context.Context, userID uuid.UUID) ([]
 
 func (p *ProgressUseCase) CheckProgress(ctx context.Context, userID, entityUUID uuid.UUID) bool {
 	_, err := p.repo.GetByEntityUUID(ctx, userID, entityUUID)
-	if err != nil {
-		return false
-	} else {
-		return true
-	}
+	return err == nil
 }
 
 func (p *ProgressUseCase) AddProgress(ctx context.Context, userID uuid.UUID, entityType string, entityID uuid.UUID, points int, createdAt time.Time) error {
@@ -71,7 +67,11 @@ func (p *ProgressUseCase) GetStreak(ctx context.Context, userID uuid.UUID) (int,
 
 	var dates []time.Time
 	for dateStr := range dateMap {
-		date, _ := time.Parse("2006-01-02", dateStr)
+		date, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			log.Printf("invalid date format: %v", err)
+			continue
+		}
 		dates = append(dates, date)
 	}
 

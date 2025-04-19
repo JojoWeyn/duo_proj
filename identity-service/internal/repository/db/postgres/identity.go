@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/JojoWeyn/duo-proj/identity-service/internal/domain/entity"
 	"gorm.io/gorm"
@@ -49,9 +50,19 @@ func (r *IdentityRepository) FindByUUID(ctx context.Context, uuid string) (*enti
 }
 
 func (r *IdentityRepository) Update(ctx context.Context, identity *entity.Identity) error {
-	return r.db.WithContext(ctx).Save(&identity).Error
+	if identity.ID == 0 {
+		return fmt.Errorf("cannot update entity: missing ID")
+	}
+
+	err := r.db.WithContext(ctx).
+		Model(&entity.Identity{}).
+		Where("id = ?", identity.ID).
+		Updates(identity).
+		Error
+
+	return err
 }
 
-func (r *IdentityRepository) Delete(id int) error {
-	return r.db.Delete(&entity.Identity{}, id).Error
+func (r *IdentityRepository) Delete(ctx context.Context, id int) error {
+	return r.db.WithContext(ctx).Delete(&entity.Identity{}, id).Error
 }
