@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usersAPI } from '../../api/api';
+import './UserList.css';
 
 
 const UserList = () => {
@@ -28,18 +29,19 @@ const UserList = () => {
     // Функция для рендеринга каждого пользователя
     const renderUser = (user) => (
       <div key={user.uuid} className="user-card">
-        <img src={user.avatar || ''} alt="Avatar"/>
+        <img src={user.avatar || '/default-avatar.png'} alt={`${user.name} ${user.last_name}`}/>
         <div className="user-info">
           <h3>{user.name} {user.second_name} {user.last_name}</h3>
-          <p>Rank: {user.rank.name}</p>
-          <p>Created at: {new Date(user.created_at).toLocaleString()}</p>
-          <p>Updated at: {new Date(user.updated_at).toLocaleString()}</p>
+          <p>Ранг: {user.rank.name}</p>
+          <p>Создан: {new Date(user.created_at).toLocaleString()}</p>
+          <p>Обновлен: {new Date(user.updated_at).toLocaleString()}</p>
         </div>
       </div>
     );
   
     return (
       <div className="user-list">
+        <h1>Все пользователи</h1>
         {loading && <p>Загрузка...</p>}
         {error && <p>{error}</p>}
         {!loading && !error && users.length === 0 && <p>Нет пользователей</p>}

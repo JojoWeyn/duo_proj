@@ -16,6 +16,7 @@ api.interceptors.request.use((config) => {
 
 export const authAPI = {
   login: (email, password) => api.post('/v1/auth/login', { email, password }),
+  checkToken: () => api.get('/v1/auth/token/status'),
   logout: () => api.post('/v1/auth/logout'),
 };
 

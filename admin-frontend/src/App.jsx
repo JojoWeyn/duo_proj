@@ -1,5 +1,5 @@
 import './App.css';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Auth from './components/pages/Auth';
 import Layout from './components/pages/Layout';
 import { CourseList } from './components/Courses/CourseList';
@@ -21,6 +21,7 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/" element={<Navigate to="/courses" replace />} />
         <Route path="/login" element={<Auth />} />
 
         <Route element={<PrivateRoute />}>

@@ -50,14 +50,20 @@ const FileAttachModal = ({ show, handleClose, entity, entityUuid }) => {
   if (!show) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
+    <div className="modal-overlay open" onClick={handleClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <span className="close" onClick={handleClose}>&times;</span>
-        <h2>Прикрепить файл</h2>
-        <input type="text" placeholder="Название файла" value={title} onChange={e => setTitle(e.target.value)} />
-        <input type="file" onChange={handleFileChange} />
-        <button onClick={handleUpload}>Загрузить</button>
-        <button onClick={handleClose}>Отмена</button>
+        <div className="modal-header">
+          <h2 className="modal-title">Прикрепить файл</h2>
+          <span className="modal-close" onClick={handleClose}>&times;</span>
+        </div>
+        <div className="modal-form">
+          <input type="text" placeholder="Название файла" value={title} onChange={e => setTitle(e.target.value)} />
+          <input type="file" onChange={handleFileChange} />
+          <div className="modal-actions">
+            <button onClick={handleClose}>Отмена</button>
+            <button onClick={handleUpload} className="primary">Загрузить</button>
+          </div>
+        </div>
       </div>
     </div>
   );

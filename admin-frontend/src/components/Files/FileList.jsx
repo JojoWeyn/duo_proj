@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { filesAPI } from '../../api/api';
+import './FileList.css';
 
 const getFileType = (url) => {
   const ext = url.split('.').pop().split('?')[0].toLowerCase();
@@ -11,18 +12,22 @@ const getFileType = (url) => {
 
 export const FileList = () => {
   const [files, setFiles] = useState([]);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchFiles = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const response = await filesAPI.getList();
         const data = await response.data;
         setFiles(data.files);
-        console.log(data.files)
       } catch (err) {
         console.error('Ошибка загрузки файлов:', err);
         setError('Не удалось загрузить файлы.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -31,69 +36,64 @@ export const FileList = () => {
 
   const handleDeleteClick = async (url) => {
     const fileName = url.substring(url.indexOf('duo/') + 4);
-     const isConfirmed = window.confirm("Вы уверены, что хотите удалить этот файл?");
-        if (!isConfirmed) return;
-    
-        try {
-          await filesAPI.deleteFile(fileName);
-          setFiles(files.filter((file) => file.fileName !== fileName));
-        } catch (error) {
-          console.error("Ошибка при удалении файла:", error);
-        }
+    const isConfirmed = window.confirm("Вы уверены, что хотите удалить этот файл?");
+    if (!isConfirmed) return;
+
+    try {
+      await filesAPI.deleteFile(fileName);
+      setFiles(files.filter((file) => file !== url));
+    } catch (error) {
+      console.error("Ошибка при удалении файла:", error);
+    }
   };
-
-
-  if (error) return <div className="error">{error}</div>;
 
   return (
     <div className="file-list-container">
-      {files.map((url, idx) => {
+      {loading && <p>Загрузка файлов...</p>}
+      {error && <div className="error">{error}</div>}
+      {!loading && !error && files.length === 0 && <p>Файлы не найдены</p>}
+
+      {!loading && !error && files.map((url, idx) => {
         const type = getFileType(url);
-
         return (
-          <div>
-          <div key={idx} className="file-card">
-            {type === 'image' && (
-              <img src={url} alt={`file-${idx}`} className="file-image" />
-            )}
-            {type === 'video' && (
-              <video controls className="file-video">
-                <source src={url} />
-                Ваш браузер не поддерживает видео.
-              </video>
-            )}
-            {type === 'document' && (
-              <a
-                href={url}
-                target="_blank"
-                rel="noreferrer"
-                className="file-link document-link"
-              >
-                📄 Открыть документ
-              </a>
-            )}
-            {type === 'other' && (
-              <a
-                href={url}
-                target="_blank"
-                rel="noreferrer"
-                className="file-link other-link"
-              >
-                📁 {url.split('/').pop()}
-              </a>
-            )}
-
-            
-          </div>
-          <button className="delete-button full-width" onClick={() => handleDeleteClick(url)}>
+          <div key={idx}>
+            <div className="file-card">
+              {type === 'image' && (
+                <img src={url} alt={`file-${idx}`} className="file-image" />
+              )}
+              {type === 'video' && (
+                <video controls className="file-video">
+                  <source src={url} />
+                  Ваш браузер не поддерживает видео.
+                </video>
+              )}
+              {type === 'document' && (
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="file-link document-link"
+                >
+                  📄 Открыть документ
+                </a>
+              )}
+              {type === 'other' && (
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="file-link other-link"
+                >
+                  📁 {url.split('/').pop()}
+                </a>
+              )}
+            </div>
+            <button className="delete-button full-width" onClick={() => handleDeleteClick(url)}>
               Удалить
             </button>
-            </div>
-          
+          </div>
         );
       })}
-
-
     </div>
   );
 };
