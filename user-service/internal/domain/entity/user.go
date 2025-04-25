@@ -8,17 +8,19 @@ import (
 )
 
 type User struct {
-	UUID         uuid.UUID     `json:"uuid" gorm:"unique;type:uuid;primaryKey"`
-	Login        string        `json:"login"`
-	Name         string        `json:"name"`
-	SecondName   string        `json:"second_name"`
-	LastName     string        `json:"last_name"`
-	RankID       int           `json:"rank_id"`
-	Rank         Rank          `json:"rank" gorm:"foreignKey:RankID;constraint:OnDelete:SET NULL"`
-	CreatedAt    time.Time     `json:"created_at"`
-	UpdatedAt    time.Time     `json:"updated_at"`
-	Avatar       string        `json:"avatar"`
-	Achievements []Achievement `json:"achievements" gorm:"many2many:user_achievements;"`
+	UUID            uuid.UUID     `json:"uuid" gorm:"unique;type:uuid;primaryKey"`
+	Login           string        `json:"login"`
+	Name            string        `json:"name"`
+	SecondName      string        `json:"second_name"`
+	LastName        string        `json:"last_name"`
+	RankID          int           `json:"rank_id"`
+	Rank            Rank          `json:"rank" gorm:"foreignKey:RankID;constraint:OnDelete:SET NULL"`
+	CreatedAt       time.Time     `json:"created_at"`
+	UpdatedAt       time.Time     `json:"updated_at"`
+	Avatar          string        `json:"avatar"`
+	Achievements    []Achievement `json:"achievements" gorm:"many2many:user_achievements;"`
+	TotalPoints     int           `json:"total_points" gorm:"default:0"`
+	FinishedCourses int64         `json:"finished_courses" gorm:"default:0"`
 }
 
 type Leaderboard struct {

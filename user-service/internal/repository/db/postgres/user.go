@@ -27,6 +27,30 @@ func (r *UserRepository) FindByUUID(ctx context.Context, uuid uuid.UUID) (*entit
 	if err := r.db.WithContext(ctx).Preload("Rank").Where("uuid = ?", uuid).First(&user).Error; err != nil {
 		return nil, err
 	}
+
+	var totalPoints int
+	entityType := "lesson"
+	err := r.db.WithContext(ctx).
+		Table("progresses").
+		Select("COALESCE(SUM(points), 0)").
+		Where("user_uuid = ? AND entity_type = ?", uuid, entityType).
+		Scan(&totalPoints).Error
+	if err != nil {
+		return nil, err
+	}
+	user.TotalPoints = totalPoints
+
+	var finished int64
+	finishedType := "course"
+	err = r.db.WithContext(ctx).
+		Table("progresses").
+		Where("user_uuid = ? AND entity_type = ? AND completed_at IS NOT NULL", uuid, finishedType).
+		Count(&finished).Error
+	if err != nil {
+		return nil, err
+	}
+	user.FinishedCourses = finished
+
 	return &user, nil
 }
 
@@ -45,7 +69,6 @@ func (r *UserRepository) GetAll(ctx context.Context, limit, offset int) ([]*enti
 func (r *UserRepository) GetLeaderboard(ctx context.Context, limit, offset int) ([]entity.Leaderboard, error) {
 	var leaderboard []entity.Leaderboard
 
-	// Используем ROW_NUMBER() для уникальных мест, с дополнительной сортировкой по дате
 	query := `
 		WITH user_points AS (
 			SELECT

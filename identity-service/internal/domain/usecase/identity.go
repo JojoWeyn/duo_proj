@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 
-	"github.com/JojoWeyn/duo-proj/identity-service/internal/controller/kafka"
 	"github.com/JojoWeyn/duo-proj/identity-service/internal/domain/entity"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -35,14 +34,19 @@ type TokenService interface {
 	BlacklistToken(ctx context.Context, token string) error
 }
 
+type EventProducer interface {
+	SendUserCreated(userUUID string, email string) error
+	SendUserLogin(userUUID string, email string) error
+}
+
 type IdentityUseCase struct {
 	identityRepo IdentityRepository
 	tokenService TokenService
 	tokenRepo    TokenRepository
-	producer     *kafka.Producer
+	producer     EventProducer
 }
 
-func NewIdentityUseCase(identityRepo IdentityRepository, tokenService TokenService, tokenRepo TokenRepository, producer *kafka.Producer) *IdentityUseCase {
+func NewIdentityUseCase(identityRepo IdentityRepository, tokenService TokenService, tokenRepo TokenRepository, producer EventProducer) *IdentityUseCase {
 	return &IdentityUseCase{
 		identityRepo: identityRepo,
 		tokenService: tokenService,
