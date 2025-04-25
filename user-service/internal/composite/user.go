@@ -1,13 +1,15 @@
 package composite
 
 import (
+	"context"
+	"log"
+
 	v1 "github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/v1"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/v1/admin"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/kafka"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/repository/cache"
 	"github.com/JojoWeyn/duo-proj/user-service/pkg/client/redis"
 	"github.com/JojoWeyn/duo-proj/user-service/pkg/client/s3"
-	"log"
 
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/usecase"
@@ -37,7 +39,7 @@ type UserComposite struct {
 	ProgressUseCase    *usecase.ProgressUseCase
 }
 
-func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
+func NewUserComposite(ctx context.Context, db *gorm.DB, cfg Config) (*UserComposite, error) {
 	if err := db.AutoMigrate(&entity.User{}, &entity.Rank{}, &entity.Progress{}); err != nil {
 		return nil, err
 	}
@@ -75,7 +77,7 @@ func NewUserComposite(db *gorm.DB, cfg Config) (*UserComposite, error) {
 		log.Printf("Failed to create S3 client: %v", err)
 	}
 
-	redisClient, err := redis.NewRedisClient(redis.Config{
+	redisClient, err := redis.NewRedisClient(ctx, redis.Config{
 		Addr: cfg.RedisURL,
 		DB:   cfg.RedisDB,
 	})

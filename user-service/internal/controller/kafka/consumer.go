@@ -54,7 +54,7 @@ func (c *SaramaConsumerGroup) Start(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	consumer := ConsumerGroupHandler{userUseCase: c.userUsecase, achievementUsecase: c.achievementUsecase}
+	consumer := ConsumerGroupHandler{userUseCase: c.userUsecase, achievementUsecase: c.achievementUsecase, ctx: ctx}
 
 	go func() {
 		for {
@@ -81,6 +81,7 @@ func (c *SaramaConsumerGroup) Start(ctx context.Context) {
 type ConsumerGroupHandler struct {
 	userUseCase        userUseCase
 	achievementUsecase achievementUseCase
+	ctx                context.Context
 }
 
 func (ConsumerGroupHandler) Setup(_ sarama.ConsumerGroupSession) error   { return nil }
@@ -117,13 +118,13 @@ func (c ConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, 
 		}
 
 		if msg.Action == "" {
-			if err := c.userUseCase.CreateUser(context.Background(), receivedUUID, msg.Login); err != nil {
+			if err := c.userUseCase.CreateUser(c.ctx, receivedUUID, msg.Login); err != nil {
 				log.Printf("Error creating user: %v", err)
 			} else {
 				log.Printf("User with UUID %s successfully created", receivedUUID)
 			}
 		} else {
-			err := c.achievementUsecase.CheckAchievements(context.Background(), receivedUUID, msg.Action)
+			err := c.achievementUsecase.CheckAchievements(c.ctx, receivedUUID, msg.Action)
 			if err != nil {
 				log.Printf("Error checking achievements: %v", err)
 			}

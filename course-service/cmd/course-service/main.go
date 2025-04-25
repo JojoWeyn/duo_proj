@@ -1,12 +1,14 @@
 package main
 
 import (
-	"github.com/JojoWeyn/duo-proj/course-service/internal/composite"
-	"github.com/JojoWeyn/duo-proj/course-service/pkg/client/postgresql"
-	"github.com/joho/godotenv"
+	"context"
 	"log"
 	"os"
 	"time"
+
+	"github.com/JojoWeyn/duo-proj/course-service/internal/composite"
+	"github.com/JojoWeyn/duo-proj/course-service/pkg/client/postgresql"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -26,7 +28,10 @@ func main() {
 		log.Fatalf("Failed to initialize db: %s", err.Error())
 	}
 
-	courseComposite, err := composite.NewCourseComposite(db, composite.Config{
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	courseComposite, err := composite.NewCourseComposite(ctx, db, composite.Config{
 		GatewayURL:   getEnv("GATEWAY_URL", "176.109.108.209:3211"),
 		RedisURL:     getEnv("REDIS_URL", "redis:6379"),
 		RedisDB:      getEnvAsInt("REDIS_DB", 0),

@@ -3,13 +3,14 @@ package kafka
 import (
 	"context"
 	"encoding/json"
-	"github.com/IBM/sarama"
-	"github.com/google/uuid"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/IBM/sarama"
+	"github.com/google/uuid"
 )
 
 type ProgressUseCase interface {
@@ -48,7 +49,7 @@ func (c *ProgressConsumer) Start(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	consumer := ProgressConsumerGroupHandler{progressUseCase: c.progressUseCase}
+	consumer := ProgressConsumerGroupHandler{progressUseCase: c.progressUseCase, ctx: ctx}
 
 	go func() {
 		for {
@@ -75,6 +76,7 @@ func (c *ProgressConsumer) Start(ctx context.Context) {
 
 type ProgressConsumerGroupHandler struct {
 	progressUseCase ProgressUseCase
+	ctx             context.Context
 }
 
 func (ProgressConsumerGroupHandler) Setup(_ sarama.ConsumerGroupSession) error   { return nil }
@@ -101,10 +103,10 @@ func (c ProgressConsumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupS
 		entityUUID := uuid.MustParse(msg.EntityUUID)
 		userUUID := uuid.MustParse(msg.UserUUID)
 
-		isCompleted := c.progressUseCase.CheckProgress(context.Background(), userUUID, entityUUID)
+		isCompleted := c.progressUseCase.CheckProgress(c.ctx, userUUID, entityUUID)
 
 		if !isCompleted {
-			if err := c.progressUseCase.AddProgress(context.Background(), userUUID, msg.EntityType, entityUUID, msg.Points, msg.CreatedAt); err != nil {
+			if err := c.progressUseCase.AddProgress(c.ctx, userUUID, msg.EntityType, entityUUID, msg.Points, msg.CreatedAt); err != nil {
 				log.Printf("Error adding progress: %v", err)
 			}
 		}

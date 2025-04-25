@@ -43,14 +43,14 @@ func main() {
 		RedisDB:      getEnvAsInt("REDIS_DB", 0),
 	}
 
-	app, err := composite.NewUserComposite(db, cfg)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	app, err := composite.NewUserComposite(ctx, db, cfg)
 
 	if err != nil {
 		log.Fatal("Failed to create application:", err)
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	consumer := kafka.NewSaramaConsumerGroup(app.UserUseCase, app.AchievementUseCase, []string{cfg.KafkaBrokers}, cfg.KafkaTopic, "user-service-group")
 	go consumer.Start(ctx)

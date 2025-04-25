@@ -1,6 +1,8 @@
 package composite
 
 import (
+	"context"
+
 	v1 "github.com/JojoWeyn/duo-proj/course-service/internal/controller/http/v1"
 	"github.com/JojoWeyn/duo-proj/course-service/internal/controller/http/v1/admin"
 	"github.com/JojoWeyn/duo-proj/course-service/internal/controller/kafka"
@@ -32,7 +34,7 @@ type CourseComposite struct {
 	handler *gin.Engine
 }
 
-func NewCourseComposite(db *gorm.DB, cfg Config) (*CourseComposite, error) {
+func NewCourseComposite(ctx context.Context, db *gorm.DB, cfg Config) (*CourseComposite, error) {
 
 	if err := db.AutoMigrate(
 		&entity.Course{},
@@ -74,7 +76,7 @@ func NewCourseComposite(db *gorm.DB, cfg Config) (*CourseComposite, error) {
 	fileS3Repo := s3Repo.NewFileS3Repository(s3Client)
 	fileS3UseCase := usecase.NewFileS3UseCase(fileS3Repo)
 
-	redisClient, err := redis.NewRedisClient(redis.Config{
+	redisClient, err := redis.NewRedisClient(ctx, redis.Config{
 		Addr: cfg.RedisURL,
 		DB:   cfg.RedisDB,
 	})

@@ -11,13 +11,13 @@ type Config struct {
 	DB   int
 }
 
-func NewRedisClient(cfg Config) (*redis.Client, error) {
+func NewRedisClient(ctx context.Context, cfg Config) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr: cfg.Addr,
 		DB:   cfg.DB,
 	})
 
-	_, err := client.Ping(context.Background()).Result()
+	_, err := client.Ping(ctx).Result()
 	if err != nil {
 		log.Fatalf("Redis connection failed: %v", err)
 	}
