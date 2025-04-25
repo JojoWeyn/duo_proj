@@ -1,0 +1,204 @@
+.card-item {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+
+.lesson-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.lesson-header h3 {
+  margin: 0;
+  font-size: 1.2em;
+  color: #333;
+}
+
+.lesson-title {
+  font-size: 1.1em;
+  color: #666;
+  flex-grow: 1;
+}
+
+.delete-button {
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.delete-button:hover {
+  background-color: #cc0000;
+}
+
+.lesson-description {
+  color: #666;
+  margin: 10px 0;
+}
+
+.options-list, .matching-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.option-item, .matching-pair {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.option-box {
+  flex-grow: 1;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.correct {
+  background-color: #e8f5e9;
+}
+
+.incorrect {
+  background-color: #ffebee;
+}
+
+.new-option-form, .new-pair-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.new-option-form input, .new-pair-form input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.new-option-form label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.button {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  max-width: 60%;
+  align-self: center;
+}
+
+.exercise-files {
+  margin-top: 15px;
+  display: grid;
+  gap: 15px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.file-preview {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #f8f9fa;
+}
+
+.file-preview img, .file-preview video {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.exercise-file-link {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  color: #2196F3;
+  text-decoration: none;
+}
+
+.exercise-file-link:hover {
+  text-decoration: underline;
+}
+
+.options-list {
+    color: #000;
+}
+
+.icon-medium {
+  width: 20px;
+  height: 20px;
+}
+
+.icon-small {
+  width: 16px;
+  height: 16px;
+}
+
+.left-text,
+.right-text {
+  background-color: #ffffff;
+  padding: 16px 20px;
+  width: 100%;
+  height: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  cursor: default;
+  margin-bottom: 12px;
+  transition: box-shadow 0.3s, transform 0.2s;
+  font-size: 1em;
+  color: #333;
+  
+}
+
+
+
+.left-text span,
+.right-text span {
+  flex-grow: 1;
+  word-break: break-word;
+}
+
+@media (max-width: 768px) {
+  .courses-container {
+    grid-template-columns: 1fr;
+  }
+
+  .lesson-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .option-item, .matching-pair {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .exercise-files {
+    grid-template-columns: 1fr;
+  }
+}

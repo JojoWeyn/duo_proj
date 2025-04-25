@@ -1,0 +1,93 @@
+.user-list {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.user-list-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.user-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.user-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.user-card img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 15px;
+  border: 3px solid #f0f0f0;
+}
+
+.user-info h3 {
+  margin: 0 0 10px;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.user-info p {
+  margin: 5px 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.user-info p:last-child {
+  margin-bottom: 0;
+}
+
+/* Состояния загрузки и ошибок */
+.user-list > p {
+  text-align: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.user-list > p:first-child {
+  background: #e9ecef;
+}
+
+.user-list > p:nth-child(2) {
+  background: #e9ecef;
+  color: #666;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .user-list-container {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  
+  .user-card {
+    padding: 15px;
+  }
+  
+  .user-info h3 {
+    font-size: 1.1rem;
+  }
+  
+  .user-info p {
+    font-size: 0.85rem;
+  }
+}
