@@ -48,12 +48,12 @@ func NewTokenService(accessPrivateKey *rsa.PrivateKey, accessPublicKey *rsa.Publ
 }
 
 func (s *TokenService) GenerateTokenPair(userID, userRole string) (string, string, error) {
-	accessToken, err := s.generateToken(userID, userRole, s.accessPrivateKey, s.accessTimeout)
+	accessToken, err := s.GenerateToken(userID, userRole, s.accessPrivateKey, s.accessTimeout)
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := s.generateToken(userID, userRole, s.refreshPrivateKey, s.refreshTimeout)
+	refreshToken, err := s.GenerateToken(userID, userRole, s.refreshPrivateKey, s.refreshTimeout)
 	if err != nil {
 		return "", "", err
 	}
@@ -67,7 +67,7 @@ func (s *TokenService) ValidateToken(token string, isRefreshToken bool) (string,
 		publicKey = s.refreshPublicKey
 	}
 
-	claims, err := s.parseToken(token, publicKey)
+	claims, err := s.ParseToken(token, publicKey)
 	if err != nil {
 		return "", "", err
 	}
@@ -75,7 +75,7 @@ func (s *TokenService) ValidateToken(token string, isRefreshToken bool) (string,
 	return claims.Sub, claims.Role, nil
 }
 
-func (s *TokenService) parseToken(tokenString string, publicKey *rsa.PublicKey) (*Claims, error) {
+func (s *TokenService) ParseToken(tokenString string, publicKey *rsa.PublicKey) (*Claims, error) {
 	claims := &Claims{}
 
 	parsedToken, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
@@ -92,7 +92,7 @@ func (s *TokenService) parseToken(tokenString string, publicKey *rsa.PublicKey) 
 	return claims, nil
 }
 
-func (s *TokenService) generateToken(userID, userRole string, privateKey *rsa.PrivateKey, expiration time.Duration) (string, error) {
+func (s *TokenService) GenerateToken(userID, userRole string, privateKey *rsa.PrivateKey, expiration time.Duration) (string, error) {
 	if userID == "" {
 		return "", errors.ErrEmptyUserID
 	}
@@ -116,9 +116,9 @@ func (s *TokenService) generateToken(userID, userRole string, privateKey *rsa.Pr
 }
 
 func (s *TokenService) BlacklistToken(ctx context.Context, token string) error {
-	claims, err := s.parseToken(token, s.accessPublicKey)
+	claims, err := s.ParseToken(token, s.accessPublicKey)
 	if err != nil {
-		claims, err = s.parseToken(token, s.refreshPublicKey)
+		claims, err = s.ParseToken(token, s.refreshPublicKey)
 		if err != nil {
 			return err
 		}

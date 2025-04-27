@@ -37,7 +37,7 @@ type identityRoutes struct {
 	verificationService VerificationService
 }
 
-func newIdentityRoutes(handler *gin.RouterGroup, verificationService VerificationService, identityUseCase IdentityUseCase) {
+func NewIdentityRoutes(handler *gin.RouterGroup, verificationService VerificationService, identityUseCase IdentityUseCase) {
 	r := &identityRoutes{
 		identityUseCase:     identityUseCase,
 		verificationService: verificationService,

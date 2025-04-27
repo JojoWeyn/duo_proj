@@ -17,6 +17,6 @@ func NewRouter(handler *gin.Engine, vs VerificationService, uc IdentityUseCase, 
 
 	v1 := handler.Group("/v1")
 	{
-		newIdentityRoutes(v1, vs, uc)
+		NewIdentityRoutes(v1, vs, uc)
 	}
 }
