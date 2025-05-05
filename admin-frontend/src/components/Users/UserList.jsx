@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usersAPI } from '../../api/api';
 import './UserList.css';
 
 
 const UserList = () => {
+    const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -26,9 +28,19 @@ const UserList = () => {
       loadUsers();
     }, []);
   
+    // Функция для перехода на страницу с подробной информацией о пользователе
+    const handleUserClick = (uuid) => {
+      navigate(`/users/${uuid}`);
+    };
+
     // Функция для рендеринга каждого пользователя
     const renderUser = (user) => (
-      <div key={user.uuid} className="user-card">
+      <div 
+        key={user.uuid} 
+        className="user-card" 
+        onClick={() => handleUserClick(user.uuid)}
+        style={{ cursor: 'pointer' }}
+      >
         <img src={user.avatar || '/default-avatar.png'} alt={`${user.name} ${user.last_name}`}/>
         <div className="user-info">
           <h3>{user.name} {user.second_name} {user.last_name}</h3>

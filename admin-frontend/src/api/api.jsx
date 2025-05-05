@@ -14,10 +14,97 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Перехватчик для обработки ответов и автоматического обновления токенов
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // Если ошибка 401 и запрос не на обновление токена и не было попытки повторить запрос
+    if (error.response?.status === 401 && 
+        !originalRequest._retry && 
+        originalRequest.url !== '/v1/auth/refresh') {
+      
+      if (isRefreshing) {
+        // Если уже идет обновление токена, добавляем запрос в очередь
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(token => {
+            originalRequest.headers['Authorization'] = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch(err => Promise.reject(err));
+      }
+      
+      originalRequest._retry = true;
+      isRefreshing = true;
+      
+      try {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (!refreshToken) {
+          // Если нет refresh токена, выходим из системы
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          window.location.href = '/login';
+          return Promise.reject(error);
+        }
+        
+        const response = await authAPI.refreshToken(refreshToken);
+        const { access_token, refresh_token } = response.data;
+        
+        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('refresh_token', refresh_token);
+        
+        api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+        originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+        
+        processQueue(null, access_token);
+        isRefreshing = false;
+        
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        
+        // Очищаем токены и перенаправляем на страницу входа
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+        
+        return Promise.reject(refreshError);
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 export const authAPI = {
   login: (email, password) => api.post('/v1/auth/login', { email, password }),
+  refreshToken: (refreshToken) => api.post('/v1/auth/refresh', { refresh_token: refreshToken }),
   checkToken: () => api.get('/v1/auth/token/status'),
   logout: () => api.post('/v1/auth/logout'),
+  getVerificationCode: (email) => api.post('/v1/auth/verification/code', null, {
+    params: { email }
+  }),
+  resetPassword: (code, email, newPassword) => api.post('/v1/auth/password/reset', { code, email, new_password: newPassword }),
+  getUserInfo: () => api.get('/v1/auth/me'),
 };
 
 export const coursesAPI = {
@@ -90,5 +177,15 @@ export const usersAPI = {
       offset,
       limit
     }
-  })
+  }),
+  getUser: (uuid) => api.get(`/v1/users/${uuid}`),
+  getUserAchievements: (uuid) => api.get(`/v1/users/achievements/${uuid}`)
+};
+
+export const achievementsAPI = {
+  getList: () => api.get('/v1/admin/achievements/list'),
+  create: (data) => api.post('/v1/admin/achievements/create', data),
+  update: (id, data) => api.patch(`/v1/admin/achievements/${id}`, data),
+  get: (uuid) => api.get(`/v1/admin/achievements/${uuid}`),
+  delete: (id) => api.delete(`/v1/admin/achievements/${id}`)
 };

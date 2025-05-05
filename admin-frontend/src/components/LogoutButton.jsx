@@ -6,6 +6,8 @@ const LogoutButton = () => {
   const handleLogout = () => {
     // Удаляем токен из localStorage
     localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+
 
     // Перенаправляем пользователя на страницу логина
     navigate('/login');

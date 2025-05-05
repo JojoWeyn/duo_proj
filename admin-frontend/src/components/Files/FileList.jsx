@@ -49,6 +49,7 @@ export const FileList = () => {
 
   return (
     <div className="file-list-container">
+      
       {loading && <p>Загрузка файлов...</p>}
       {error && <div className="error">{error}</div>}
       {!loading && !error && files.length === 0 && <p>Файлы не найдены</p>}
@@ -56,7 +57,9 @@ export const FileList = () => {
       {!loading && !error && files.map((url, idx) => {
         const type = getFileType(url);
         return (
+          
           <div key={idx}>
+            
             <div className="file-card">
               {type === 'image' && (
                 <img src={url} alt={`file-${idx}`} className="file-image" />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { coursesAPI, exercisesAPI, questionsAPI } from '../../api/api';
+import { exercisesAPI, questionsAPI } from '../../api/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import trashIcon from '../../assets/trash.svg';
 import FileAttachModal from '../Files/FileAttachModal'
@@ -202,6 +202,10 @@ export const QuestionList = () => {
               <span className="lesson-title">{question.text}</span>
               <button className="button" onClick={() => handleDeleteQuestion(question.uuid)}>
                 Удалить вопрос
+              </button>
+              
+              <button className="button" onClick={() => navigate(`/questions/${question.uuid}/update`)}>
+                Обновить вопрос
               </button>
 
               <button onClick={() => openAttachModal(question.uuid)}>

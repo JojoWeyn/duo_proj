@@ -275,6 +275,7 @@ label {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   animation: slideUp 0.5s ease-out;
+  position: relative;
 }
 
 .login-container h1 {
@@ -285,7 +286,7 @@ label {
   font-weight: 700;
 }
 
-.admin-form {
+.admin-form, .reset-form {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
@@ -303,6 +304,62 @@ label {
   cursor: pointer;
   transition: all var(--transition-normal);
   box-shadow: 0 4px 6px rgba(255, 107, 53, 0.2);
+}
+
+.text-button {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: underline;
+  padding: 5px;
+  margin-top: 10px;
+  transition: color var(--transition-fast);
+}
+
+.text-button:hover {
+  color: var(--primary-hover);
+}
+
+.reset-password-link {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--dark-gray);
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.message {
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }
 
 .submit-button:hover {
@@ -651,8 +708,8 @@ li {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
+  opacity: 1;
+  visibility: visible;
   transition: opacity var(--transition-normal), visibility var(--transition-normal);
 }
 
@@ -670,7 +727,7 @@ li {
   max-height: 90vh;
   overflow-y: auto;
   padding: var(--spacing-lg);
-  transform: translateY(-20px);
+  transform: translateY(0);
   transition: transform var(--transition-normal);
 }
 
@@ -948,7 +1005,17 @@ li {
   color: #666;
 }
 
+.dashboard-button .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  margin-right: 12px;
+}
 
+.button-label {
+  flex-grow: 1;
+}
 
 .card-error {
   border-top: 4px solid var(--error);

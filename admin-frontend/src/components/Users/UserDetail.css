@@ -1,0 +1,162 @@
+.user-detail {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.back-button {
+  background-color: #f0f0f0;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+.back-button:hover {
+  background-color: #e0e0e0;
+}
+
+.user-profile {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.user-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 24px;
+  border: 3px solid #f0f0f0;
+}
+
+.user-title h1 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+}
+
+.user-login {
+  color: #666;
+  margin: 0;
+  font-size: 16px;
+}
+
+.user-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.achievements-section {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+}
+
+.achievements-section h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
+.achievements-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.achievement-card {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+  border-left: 4px solid #ccc;
+}
+
+.achievement-card.achieved {
+  border-left-color: #4caf50;
+}
+
+.achievement-card.not-achieved {
+  border-left-color: #ff9800;
+  opacity: 0.8;
+}
+
+.achievement-card h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.achievement-card p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.achievement-progress {
+  margin-top: 12px;
+}
+
+.progress-bar {
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #4caf50;
+  border-radius: 4px;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: #666;
+}
+
+.achievement-date {
+  font-size: 12px;
+  color: #4caf50;
+  margin-top: 8px;
+}
+
+.error {
+  color: #f44336;
+  font-weight: 500;
+}
