@@ -100,6 +100,12 @@ func main() {
 		{"GET", "/admin/users", "user", true},
 		{"DELETE", "/admin/users/:uuid", "user", true},
 
+		{"POST", "/admin/achievements/create", "user", true},
+		{"GET", "/admin/achievements/:uuid", "user", true},
+		{"PATCH", "/admin/achievements/:uuid", "user", true},
+		{"DELETE", "/admin/achievements/:uuid", "user", true},
+		{"GET", "/admin/achievements/list", "user", true},
+
 		{"GET", "/admin/course/list", "course", true},
 		{"GET", "/admin/course/:course_id/lesson", "course", true},
 		{"GET", "/admin/lesson/:lesson_id/exercise", "course", true},

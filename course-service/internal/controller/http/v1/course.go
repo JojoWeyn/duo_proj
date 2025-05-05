@@ -65,7 +65,10 @@ func (r *courseRoutes) getAllCourses(c *gin.Context) {
 			Title:        course.Title,
 			Description:  course.Description,
 			DifficultyID: course.DifficultyID,
-			Difficulty:   course.Difficulty,
+			Difficulty: dto.DifficultyDTO{
+				ID:    course.Difficulty.ID,
+				Title: course.Difficulty.Title,
+			},
 		})
 	}
 

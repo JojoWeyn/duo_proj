@@ -3,11 +3,12 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"time"
+
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/dto"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"time"
 )
 
 type AchievementRepository struct {
@@ -96,4 +97,45 @@ func (r *AchievementRepository) GetAllUserAchievements(ctx context.Context, user
 	}
 
 	return achievements, nil
+}
+
+func (r *AchievementRepository) CreateAchievement(ctx context.Context, achievement entity.Achievement) (entity.Achievement, error) {
+	achievement.ID = 0
+	achievement.CreatedAt = time.Now()
+	err := r.db.WithContext(ctx).Create(&achievement).Error
+	return achievement, err
+}
+
+func (r *AchievementRepository) GetAchievementByID(ctx context.Context, id int) (entity.Achievement, error) {
+	var achievement entity.Achievement
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&achievement).Error
+	return achievement, err
+}
+
+func (r *AchievementRepository) UpdateAchievement(ctx context.Context, id int, achievement entity.Achievement) (entity.Achievement, error) {
+	var existingAchievement entity.Achievement
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&existingAchievement).Error; err != nil {
+		return entity.Achievement{}, err
+	}
+
+	existingAchievement.Title = achievement.Title
+	existingAchievement.Description = achievement.Description
+	existingAchievement.Condition = achievement.Condition
+	existingAchievement.Secret = achievement.Secret
+
+	err := r.db.WithContext(ctx).Save(&existingAchievement).Error
+	return existingAchievement, err
+}
+
+func (r *AchievementRepository) DeleteAchievement(ctx context.Context, id int) error {
+	result := r.db.WithContext(ctx).Delete(&entity.Achievement{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }

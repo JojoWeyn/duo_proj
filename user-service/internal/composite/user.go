@@ -101,7 +101,7 @@ func NewUserComposite(ctx context.Context, db *gorm.DB, cfg Config) (*UserCompos
 
 	handler := gin.Default()
 	v1.NewRouter(handler, UserUseCase, AchievementUseCase, progressUseCase, cfg.GatewayURL)
-	admin.NewAdminRouter(handler, UserUseCase)
+	admin.NewAdminRouter(handler, UserUseCase, AchievementUseCase)
 
 	return &UserComposite{
 		handler:            handler,

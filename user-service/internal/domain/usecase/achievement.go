@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/dto"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/google/uuid"
-	"log"
 )
 
 type AchievementRepository interface {
@@ -15,6 +16,10 @@ type AchievementRepository interface {
 	GetAllUserAchievements(ctx context.Context, userID uuid.UUID) ([]dto.UserAchievementsDTO, error)
 	GetUserAchievementProgress(ctx context.Context, userID uuid.UUID, achievementID int) (*entity.UserAchievementProgress, error)
 	UpdateUserAchievementProgress(ctx context.Context, userID uuid.UUID, achievement entity.Achievement, countIncrement int) error
+	CreateAchievement(ctx context.Context, achievement entity.Achievement) (entity.Achievement, error)
+	GetAchievementByID(ctx context.Context, id int) (entity.Achievement, error)
+	UpdateAchievement(ctx context.Context, id int, achievement entity.Achievement) (entity.Achievement, error)
+	DeleteAchievement(ctx context.Context, id int) error
 }
 
 type AchievementUseCase struct {
@@ -33,6 +38,47 @@ func (uc *AchievementUseCase) GetUserAchievements(ctx context.Context, userID uu
 
 func (uc *AchievementUseCase) GetAllAchievements(ctx context.Context) ([]entity.Achievement, error) {
 	return uc.achievementRepo.GetAllAchievements(ctx)
+}
+
+// CreateAchievement создает новое достижение
+func (uc *AchievementUseCase) CreateAchievement(ctx context.Context, achievementData entity.Achievement) (entity.Achievement, error) {
+	if err := achievementData.Validate(); err != nil {
+		return entity.Achievement{}, err
+	}
+	
+	return uc.achievementRepo.CreateAchievement(ctx, achievementData)
+}
+
+// GetAchievementByID получает достижение по ID
+func (uc *AchievementUseCase) GetAchievementByID(ctx context.Context, id int) (entity.Achievement, error) {
+	return uc.achievementRepo.GetAchievementByID(ctx, id)
+}
+
+func (uc *AchievementUseCase) UpdateAchievement(ctx context.Context, id int, achievementData entity.Achievement) (entity.Achievement, error) {
+	// Проверяем существование достижения
+	existingAchievement, err := uc.achievementRepo.GetAchievementByID(ctx, id)
+	if err != nil {
+		return entity.Achievement{}, err
+	}
+
+	// Обновляем поля
+	achievementData.ID = existingAchievement.ID
+	// Сохраняем дату создания из существующего достижения
+	achievementData.CreatedAt = existingAchievement.CreatedAt
+
+	// Обновляем достижение в репозитории
+	return uc.achievementRepo.UpdateAchievement(ctx, id, achievementData)
+}
+
+func (uc *AchievementUseCase) DeleteAchievement(ctx context.Context, id int) error {
+	// Проверяем существование достижения
+	_, err := uc.achievementRepo.GetAchievementByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Удаляем достижение
+	return uc.achievementRepo.DeleteAchievement(ctx, id)
 }
 
 func (uc *AchievementUseCase) CheckAchievements(ctx context.Context, userID uuid.UUID, action string) error {

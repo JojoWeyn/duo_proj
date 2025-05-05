@@ -3,11 +3,12 @@ package v1
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/dto"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"net/http"
 )
 
 type AchievementUseCase interface {
@@ -44,6 +45,10 @@ func (r *achievementRoutes) getAllAchievements(c *gin.Context) {
 
 	var newAchievements []dto.AchievementsDTO
 	for _, achievement := range achievements {
+		if achievement.Secret {
+			continue
+		}
+
 		var condition json.RawMessage
 		if err := json.Unmarshal([]byte(achievement.Condition), &condition); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse condition"})

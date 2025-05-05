@@ -2,9 +2,15 @@ package dto
 
 import (
 	"encoding/json"
-	"github.com/google/uuid"
 	"time"
 )
+
+type CreateAchievementDTO struct {
+	Title       string          `json:"title" binding:"required"`
+	Description string          `json:"description" binding:"required"`
+	Condition   json.RawMessage `json:"condition" binding:"required"`
+	Secret      bool            `json:"secret"`
+}
 
 type UserAchievementsDTO struct {
 	ID           int       `json:"id"`
@@ -24,25 +30,4 @@ type AchievementsDTO struct {
 	Condition   json.RawMessage `json:"condition"`
 	Secret      bool            `json:"secret"`
 	CreatedAt   time.Time       `json:"created_at"`
-}
-
-type ExerciseProgressDTO struct {
-	UUID         uuid.UUID `json:"uuid" gorm:"type:uuid;primaryKey;"`
-	ExerciseUUID uuid.UUID `json:"exercise_uuid" gorm:"type:uuid;index"`
-	TotalPoints  int       `json:"total_points"`
-	CompletedAt  time.Time `json:"completed_at" gorm:"autoCreateTime"`
-}
-
-type LessonProgressDTO struct {
-	UUID        uuid.UUID `json:"uuid" gorm:"type:uuid;primaryKey;"`
-	LessonUUID  uuid.UUID `json:"lesson_uuid" gorm:"type:uuid;index"`
-	TotalPoints int       `json:"total_points"`
-	CompletedAt time.Time `json:"completed_at" gorm:"autoCreateTime"`
-}
-
-type CourseProgressDTO struct {
-	UUID        uuid.UUID `json:"uuid" gorm:"type:uuid;primaryKey;"`
-	CourseUUID  uuid.UUID `json:"course_uuid" gorm:"type:uuid;index"`
-	TotalPoints int       `json:"total_points"`
-	CompletedAt time.Time `json:"completed_at" gorm:"autoCreateTime"`
 }

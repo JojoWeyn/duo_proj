@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"github.com/JojoWeyn/duo-proj/course-service/internal/controller/http/dto"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
@@ -36,7 +37,7 @@ func (a *attemptRoutes) startAttempt(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"session_id": sessionID})
+	c.JSON(http.StatusOK, dto.StartAttemptResponseDTO{SessionID: *sessionID})
 }
 
 func (a *attemptRoutes) submitAnswer(c *gin.Context) {
@@ -69,7 +70,7 @@ func (a *attemptRoutes) submitAnswer(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"is_correct": correct})
+	c.JSON(http.StatusOK, dto.SubmitAnswerResponseDTO{IsCorrect: correct})
 }
 
 func (a *attemptRoutes) finishAttempt(c *gin.Context) {
@@ -93,10 +94,10 @@ func (a *attemptRoutes) finishAttempt(c *gin.Context) {
 		status = false
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"is_finished":     status,
-		"correct_answers": correctAnswers,
-		"questions":       questions,
+	c.JSON(http.StatusOK, dto.FinishAttemptResponseDTO{
+		IsFinished:     status,
+		CorrectAnswers: correctAnswers,
+		Questions:      questions,
 	})
 }
 

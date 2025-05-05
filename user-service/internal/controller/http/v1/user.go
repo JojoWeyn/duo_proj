@@ -3,13 +3,14 @@ package v1
 import (
 	"context"
 	"errors"
+	"mime/multipart"
+	"net/http"
+	"strconv"
+
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/http/dto"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/domain/entity"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"mime/multipart"
-	"net/http"
-	"strconv"
 )
 
 type UserUseCase interface {
@@ -63,9 +64,7 @@ func (r *userRoutes) getStreak(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"days": streak,
-	})
+	c.JSON(http.StatusOK, dto.StreakResponseDTO{Days: streak})
 }
 
 func (r *userRoutes) getLeaderboard(c *gin.Context) {
@@ -87,8 +86,13 @@ func (r *userRoutes) getLeaderboard(c *gin.Context) {
 		return
 	}
 
+	dtoList := make([]dto.LeaderboardDTO, 0, len(leaderboard))
+	for _, l := range leaderboard {
+		dtoList = append(dtoList, dto.ToLeaderboardDTO(l))
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"leaderboard": leaderboard,
+		"leaderboard": dtoList,
 		"limit":       limit,
 		"offset":      offset,
 	})
@@ -133,10 +137,10 @@ func (r *userRoutes) getProgress(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"exercises": exerciseProgress,
-		"lessons":   lessonProgress,
-		"courses":   courseProgress,
+	c.JSON(http.StatusOK, dto.ProgressResponseDTO{
+		Exercises: exerciseProgress,
+		Lessons:   lessonProgress,
+		Courses:   courseProgress,
 	})
 }
 
@@ -149,7 +153,8 @@ func (r *userRoutes) getMe(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	userDTO := dto.ToUserDTO(user)
+	c.JSON(http.StatusOK, userDTO)
 }
 
 func (r *userRoutes) getAllUsers(c *gin.Context) {
@@ -171,8 +176,13 @@ func (r *userRoutes) getAllUsers(c *gin.Context) {
 		return
 	}
 
+	userDTOs := make([]dto.UserDTO, 0, len(users))
+	for _, u := range users {
+		userDTOs = append(userDTOs, dto.ToUserDTO(u))
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"users":  users,
+		"users":  userDTOs,
 		"limit":  limit,
 		"offset": offset,
 	})
@@ -191,19 +201,33 @@ func (r *userRoutes) getUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, dto.ToUserDTO(user))
 }
 
 func (r *userRoutes) updateUser(c *gin.Context) {
 	sub := c.GetHeader("X-User-UUID")
 
-	var updateData entity.User
-	if err := c.ShouldBindJSON(&updateData); err != nil {
+	var updateDTO dto.UserUpdateDTO
+	if err := c.ShouldBindJSON(&updateDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := r.userUseCase.UpdateUser(c.Request.Context(), uuid.MustParse(sub), &updateData); err != nil {
+	entityUpdate := &entity.User{}
+	if updateDTO.Name != nil {
+		entityUpdate.Name = *updateDTO.Name
+	}
+	if updateDTO.SecondName != nil {
+		entityUpdate.SecondName = *updateDTO.SecondName
+	}
+	if updateDTO.LastName != nil {
+		entityUpdate.LastName = *updateDTO.LastName
+	}
+	if updateDTO.Login != nil {
+		entityUpdate.Login = *updateDTO.Login
+	}
+
+	if err := r.userUseCase.UpdateUser(c.Request.Context(), uuid.MustParse(sub), entityUpdate); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -234,7 +258,7 @@ func (r *userRoutes) updateAvatar(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"avatar_url": avatarURL})
+	c.JSON(http.StatusOK, dto.UserAvatarResponseDTO{AvatarURL: avatarURL})
 }
 
 func extractUserUUID(c *gin.Context) (uuid.UUID, error) {

@@ -115,5 +115,21 @@ func (q *questionRoutes) getAllQuestions(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, err)
 		return
 	}
-	c.JSON(http.StatusOK, questions)
+
+	var questionDTOs []dto.QuestionsDTO
+	for _, question := range questions {
+		questionDTOs = append(questionDTOs, dto.QuestionsDTO{
+			UUID:         question.UUID,
+			TypeID:       question.TypeID,
+			Text:         question.Text,
+			Order:        question.Order,
+			ExerciseUUID: question.ExerciseUUID,
+			Type: dto.QuestionTypeDTO{
+				ID:    question.QuestionType.ID,
+				Title: question.QuestionType.Title,
+			},
+		})
+	}
+
+	c.JSON(http.StatusOK, questionDTOs)
 }

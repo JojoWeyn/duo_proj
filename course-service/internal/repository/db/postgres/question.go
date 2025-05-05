@@ -44,7 +44,15 @@ func (q *QuestionRepository) GetByExerciseID(ctx context.Context, exerciseID uui
 }
 
 func (q *QuestionRepository) Update(ctx context.Context, question *entity.Question) error {
-	return q.db.WithContext(ctx).Save(question).Error
+	// Только изменённые поля
+	return q.db.WithContext(ctx).
+		Model(&entity.Question{}).
+		Where("uuid = ?", question.UUID).
+		Updates(map[string]interface{}{
+			"text":    question.Text,
+			"type_id": question.TypeID,
+			"order":   question.Order,
+		}).Error
 }
 
 func (q *QuestionRepository) Delete(ctx context.Context, id uuid.UUID) error {

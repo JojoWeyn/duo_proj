@@ -2,12 +2,13 @@ package entity
 
 import (
 	"errors"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Achievement struct {
-	ID          int       `json:"id" gorm:"primaryKey"`
+	ID          int       `json:"id" gorm:"primaryKey;autoIncrement"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Condition   string    `json:"condition" gorm:"type:jsonb"`
