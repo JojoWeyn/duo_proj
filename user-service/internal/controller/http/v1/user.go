@@ -51,6 +51,15 @@ func newUserRoutes(handler *gin.RouterGroup, uc UserUseCase, puc ProgressUseCase
 	}
 }
 
+// @Summary Получить streak пользователя
+// @Description Возвращает количество последовательных дней активности пользователя
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Success 200 {object} dto.StreakResponseDTO "Серия активности пользователя (streak)"
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /users/streak [get]
 func (r *userRoutes) getStreak(c *gin.Context) {
 	userUUID, err := uuid.Parse(c.GetHeader("X-User-UUID"))
 	if err != nil {
@@ -67,6 +76,16 @@ func (r *userRoutes) getStreak(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.StreakResponseDTO{Days: streak})
 }
 
+// @Summary Get leaderboard
+// @Description Получить таблицу лидеров
+// @Tags users
+// @Produce json
+// @Param limit query int false "Лимит"
+// @Param offset query int false "Смещение"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /users/leaderboard [get]
 func (r *userRoutes) getLeaderboard(c *gin.Context) {
 	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
 	if err != nil || limit <= 0 {
@@ -98,6 +117,14 @@ func (r *userRoutes) getLeaderboard(c *gin.Context) {
 	})
 }
 
+// @Summary Получить прогресс пользователя
+// @Description Возвращает прогресс пользователя, сгруппированный по упражнениям, урокам и курсам
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Success 200 {object} dto.ProgressResponseDTO "Прогресс пользователя"
+// @Failure 404 {object} map[string]string
+// @Router /users/progress [get]
 func (r *userRoutes) getProgress(c *gin.Context) {
 	sub := c.GetHeader("X-User-UUID")
 
@@ -144,6 +171,12 @@ func (r *userRoutes) getProgress(c *gin.Context) {
 	})
 }
 
+// @Description Получить данные текущего пользователя
+// @Tags users
+// @Produce json
+// @Success 200 {object} dto.UserDTO
+// @Failure 404 {object} map[string]string
+// @Router /users/me [get]
 func (r *userRoutes) getMe(c *gin.Context) {
 	sub := c.GetHeader("X-User-UUID")
 
@@ -157,6 +190,19 @@ func (r *userRoutes) getMe(c *gin.Context) {
 	c.JSON(http.StatusOK, userDTO)
 }
 
+// @Summary Получить список пользователей
+// @Description Возвращает список пользователей с поддержкой limit и offset
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param limit query int false "Максимальное количество пользователей (по умолчанию 50)"
+// @Param offset query int false "Смещение для пагинации (по умолчанию 0)"
+//
+//	@Success 200 {object} map[string]string
+//
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /users/all [get]
 func (r *userRoutes) getAllUsers(c *gin.Context) {
 	limit, err := strconv.Atoi(c.DefaultQuery("limit", "50"))
 	if err != nil || limit <= 0 {
@@ -188,6 +234,18 @@ func (r *userRoutes) getAllUsers(c *gin.Context) {
 	})
 }
 
+// getUser обрабатывает GET-запрос для получения информации о пользователе по UUID.
+//
+// @Summary Получить пользователя
+// @Description Возвращает информацию о пользователе по его UUID
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param uuid path string true "UUID пользователя"
+// @Success 200 {object} dto.UserDTO
+// @Failure 400 {object} map[string]string "Неверный формат UUID"
+// @Failure 404 {object} map[string]string "Пользователь не найден"
+// @Router /users/{uuid} [get]
 func (r *userRoutes) getUser(c *gin.Context) {
 	userUUID, err := uuid.Parse(c.Param("uuid"))
 	if err != nil {
@@ -204,6 +262,16 @@ func (r *userRoutes) getUser(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToUserDTO(user))
 }
 
+// @Summary Update current user
+// @Description Обновить данные текущего пользователя
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body dto.UserUpdateDTO true "Данные для обновления"
+// @Success 200
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /users/me [patch]
 func (r *userRoutes) updateUser(c *gin.Context) {
 	sub := c.GetHeader("X-User-UUID")
 
@@ -235,6 +303,16 @@ func (r *userRoutes) updateUser(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// @Summary Update avatar
+// @Description Загрузить и обновить аватар текущего пользователя
+// @Tags users
+// @Accept multipart/form-data
+// @Produce json
+// @Param file formData file true "Файл аватара"
+// @Success 200 {object} dto.UserAvatarResponseDTO
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /users/me/avatar [post]
 func (r *userRoutes) updateAvatar(c *gin.Context) {
 	sub := c.GetHeader("X-User-UUID")
 

@@ -8,11 +8,21 @@ import (
 
 	"github.com/JojoWeyn/duo-proj/user-service/internal/controller/kafka"
 
+	_ "github.com/JojoWeyn/duo-proj/user-service/docs"
 	"github.com/JojoWeyn/duo-proj/user-service/internal/composite"
 	"github.com/JojoWeyn/duo-proj/user-service/pkg/client/postgresql"
 	"github.com/joho/godotenv"
 )
 
+// @title User Service API
+// @version 1.0
+// @description Сервис для управления профилями пользователей.
+// @host localhost:8082
+// @BasePath /v1
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: loading .env file")

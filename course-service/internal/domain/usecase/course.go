@@ -5,6 +5,7 @@ import (
 	"github.com/JojoWeyn/duo-proj/course-service/internal/domain/entity"
 	"github.com/google/uuid"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -42,19 +43,13 @@ func (c *CourseUseCase) GetCourseByID(ctx context.Context, id uuid.UUID) (*entit
 	return c.repo.GetByID(ctx, id)
 }
 
-func (c *CourseUseCase) GetAllCourses(ctx context.Context, typeId int) ([]entity.Course, error) {
+func (c *CourseUseCase) GetAllCourses(ctx context.Context, title string, diffId int, typeId int) ([]entity.Course, error) {
 	cacheKey := "all_courses"
 
 	var allCourses []entity.Course
 	if err := c.cache.Get(ctx, cacheKey, &allCourses); err == nil && allCourses != nil {
 		log.Println("Data fetched from cache")
-
-		if typeId == 0 {
-			return allCourses, nil
-		}
-
-		filtered := filterCoursesByTypeID(allCourses, typeId)
-		return filtered, nil
+		return filterCourses(allCourses, title, diffId, typeId), nil
 	}
 
 	allCourses, err := c.repo.GetAll(ctx)
@@ -67,21 +62,25 @@ func (c *CourseUseCase) GetAllCourses(ctx context.Context, typeId int) ([]entity
 		log.Printf("Failed to set cache: %v", err)
 	}
 
-	if typeId == 0 {
-		return allCourses, nil
-	}
-
-	filtered := filterCoursesByTypeID(allCourses, typeId)
-	return filtered, nil
+	return filterCourses(allCourses, title, diffId, typeId), nil
 }
 
-func filterCoursesByTypeID(courses []entity.Course, typeId int) []entity.Course {
+func filterCourses(courses []entity.Course, title string, diffId, typeId int) []entity.Course {
 	filtered := make([]entity.Course, 0)
+
 	for _, course := range courses {
-		if course.TypeID == typeId {
-			filtered = append(filtered, course)
+		if typeId == 2 && course.TypeID != 2 {
+			continue
 		}
+		if title != "" && !strings.HasPrefix(strings.ToLower(course.Title), strings.ToLower(title)) {
+			continue
+		}
+		if diffId != 0 && course.DifficultyID != diffId {
+			continue
+		}
+		filtered = append(filtered, course)
 	}
+
 	return filtered
 }
 

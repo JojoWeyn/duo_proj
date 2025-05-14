@@ -9,6 +9,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"strconv"
 )
 
 type QuestionUseCase interface {
@@ -41,7 +42,7 @@ type LessonUseCase interface {
 
 type CourseUseCase interface {
 	GetCourseByID(ctx context.Context, id uuid.UUID) (*entity.Course, error)
-	GetAllCourses(ctx context.Context, typeId int) ([]entity.Course, error)
+	GetAllCourses(ctx context.Context, title string, diffId int, typeId int) ([]entity.Course, error)
 	CreateCourse(ctx context.Context, title, description string, typeID, difficultyID int) error
 	UpdateCourse(ctx context.Context, course *entity.Course) error
 	DeleteCourse(ctx context.Context, id uuid.UUID) error
@@ -256,11 +257,16 @@ func (r *adminRoutes) uploadFile(c *gin.Context) {
 }
 
 func (r *adminRoutes) getAllCourses(c *gin.Context) {
-	courses, err := r.courseUseCase.GetAllCourses(c.Request.Context(), 0)
+	title := c.Query("title")
+	diffIdStr := c.Query("difficultyId")
+	diffId, _ := strconv.Atoi(diffIdStr)
+
+	courses, err := r.courseUseCase.GetAllCourses(c.Request.Context(), title, diffId, 0)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, courses)
 }
 
@@ -321,6 +327,7 @@ func (r *adminRoutes) getCourseByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, course)
 }
 

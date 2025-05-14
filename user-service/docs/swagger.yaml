@@ -1,0 +1,403 @@
+basePath: /v1
+definitions:
+  dto.CourseProgressDTO:
+    properties:
+      completed_at:
+        type: string
+      course_uuid:
+        type: string
+      total_points:
+        type: integer
+      uuid:
+        type: string
+    type: object
+  dto.ExerciseProgressDTO:
+    properties:
+      completed_at:
+        type: string
+      exercise_uuid:
+        type: string
+      total_points:
+        type: integer
+      uuid:
+        type: string
+    type: object
+  dto.LessonProgressDTO:
+    properties:
+      completed_at:
+        type: string
+      lesson_uuid:
+        type: string
+      total_points:
+        type: integer
+      uuid:
+        type: string
+    type: object
+  dto.ProgressResponseDTO:
+    properties:
+      courses:
+        items:
+          $ref: '#/definitions/dto.CourseProgressDTO'
+        type: array
+      exercises:
+        items:
+          $ref: '#/definitions/dto.ExerciseProgressDTO'
+        type: array
+      lessons:
+        items:
+          $ref: '#/definitions/dto.LessonProgressDTO'
+        type: array
+    type: object
+  dto.RankDTO:
+    properties:
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+  dto.StreakResponseDTO:
+    properties:
+      days:
+        type: integer
+    type: object
+  dto.UserAvatarResponseDTO:
+    properties:
+      avatar_url:
+        type: string
+    type: object
+  dto.UserDTO:
+    properties:
+      avatar:
+        type: string
+      created_at:
+        type: string
+      finished_courses:
+        type: integer
+      last_name:
+        type: string
+      login:
+        type: string
+      name:
+        type: string
+      rank:
+        $ref: '#/definitions/dto.RankDTO'
+      rank_id:
+        type: integer
+      second_name:
+        type: string
+      total_points:
+        type: integer
+      updated_at:
+        type: string
+      uuid:
+        type: string
+    type: object
+  dto.UserUpdateDTO:
+    properties:
+      last_name:
+        type: string
+      login:
+        type: string
+      name:
+        type: string
+      second_name:
+        type: string
+    type: object
+host: localhost:8082
+info:
+  contact: {}
+  description: Сервис для управления профилями пользователей.
+  title: User Service API
+  version: "1.0"
+paths:
+  /achievements:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех публичных достижений
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список достижений
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Ошибка при получении или парсинге достижений
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить список достижений
+      tags:
+      - Achievements
+  /users/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о пользователе по его UUID
+      parameters:
+      - description: UUID пользователя
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserDTO'
+        "400":
+          description: Неверный формат UUID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Пользователь не найден
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить пользователя
+      tags:
+      - Users
+  /users/achievements/{uuid}:
+    get:
+      description: Получить достижения пользователя по UUID
+      parameters:
+      - description: UUID пользователя
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get user achievements
+      tags:
+      - achievements
+  /users/all:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список пользователей с поддержкой limit и offset
+      parameters:
+      - description: Максимальное количество пользователей (по умолчанию 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Смещение для пагинации (по умолчанию 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить список пользователей
+      tags:
+      - Users
+  /users/leaderboard:
+    get:
+      description: Получить таблицу лидеров
+      parameters:
+      - description: Лимит
+        in: query
+        name: limit
+        type: integer
+      - description: Смещение
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get leaderboard
+      tags:
+      - users
+  /users/me:
+    get:
+      description: Получить данные текущего пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserDTO'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      tags:
+      - users
+    patch:
+      consumes:
+      - application/json
+      description: Обновить данные текущего пользователя
+      parameters:
+      - description: Данные для обновления
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserUpdateDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update current user
+      tags:
+      - users
+  /users/me/avatar:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загрузить и обновить аватар текущего пользователя
+      parameters:
+      - description: Файл аватара
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserAvatarResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update avatar
+      tags:
+      - users
+  /users/progress:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает прогресс пользователя, сгруппированный по упражнениям,
+        урокам и курсам
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Прогресс пользователя
+          schema:
+            $ref: '#/definitions/dto.ProgressResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить прогресс пользователя
+      tags:
+      - Users
+  /users/streak:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает количество последовательных дней активности пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Серия активности пользователя (streak)
+          schema:
+            $ref: '#/definitions/dto.StreakResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить streak пользователя
+      tags:
+      - Users
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -13,11 +13,21 @@ import (
 
 	"github.com/JojoWeyn/duo-proj/identity-service/internal/domain/entity"
 
+	_ "github.com/JojoWeyn/duo-proj/identity-service/docs"
 	"github.com/JojoWeyn/duo-proj/identity-service/internal/composite"
 	"github.com/JojoWeyn/duo-proj/identity-service/pkg/client/postgresql"
 	"github.com/joho/godotenv"
 )
 
+// @title Identity Service API
+// @version 1.0
+// @description Сервис для управления пользователями: регистрация, аутентификация, токены и подтверждение email.
+// @host localhost:8081
+// @BasePath /v1
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: .env file not found")

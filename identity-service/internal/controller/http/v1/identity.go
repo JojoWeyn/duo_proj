@@ -57,6 +57,13 @@ func NewIdentityRoutes(handler *gin.RouterGroup, verificationService Verificatio
 	}
 }
 
+// @Summary Получить данные текущего пользователя
+// @Tags User
+// @Security ApiKeyAuth
+// @Produce json
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /auth/me [get]
 func (r *identityRoutes) getIdentity(c *gin.Context) {
 	token, err := extractToken(c)
 	if err != nil {
@@ -82,6 +89,13 @@ func (r *identityRoutes) getIdentity(c *gin.Context) {
 
 }
 
+// @Summary Отправка кода подтверждения на email
+// @Tags Verification
+// @Produce json
+// @Param email query string true "Email пользователя"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /auth/verification/code [post]
 func (r *identityRoutes) sendVerificationCode(c *gin.Context) {
 	email := c.Query("email")
 	if email == "" {
@@ -148,6 +162,13 @@ func (r *identityRoutes) resetPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "password reset successfully"})
 }
 
+// @Summary Проверка токена
+// @Tags Auth
+// @Security ApiKeyAuth
+// @Produce json
+// @Success 200 {object} dto.TokenStatusResponse
+// @Failure 400 {object} map[string]string
+// @Router /auth/token/status [get]
 func (r *identityRoutes) checkToken(c *gin.Context) {
 	token, err := extractToken(c)
 	if err != nil {
@@ -167,6 +188,14 @@ func (r *identityRoutes) checkToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"is_blacklisted": false})
 }
 
+// @Summary Регистрация пользователя
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param data body dto.RegisterRequest true "Данные для регистрации"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /auth/register [post]
 func (r *identityRoutes) register(c *gin.Context) {
 	var req dto.RegisterRequest
 
@@ -184,6 +213,14 @@ func (r *identityRoutes) register(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "user registered successfully"})
 }
 
+// @Summary Авторизация пользователя
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param data body dto.LoginRequest true "Данные для логина"
+// @Success 200 {object} dto.TokenResponse
+// @Failure 401 {object} map[string]string
+// @Router /auth/login [post]
 func (r *identityRoutes) login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -203,6 +240,14 @@ func (r *identityRoutes) login(c *gin.Context) {
 	})
 }
 
+// @Summary Обновление токена
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param data body dto.RefreshRequest true "Refresh токен"
+// @Success 200 {object} dto.TokenResponse
+// @Failure 401 {object} map[string]string
+// @Router /auth/refresh [post]
 func (r *identityRoutes) refresh(c *gin.Context) {
 	var req dto.RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -222,6 +267,13 @@ func (r *identityRoutes) refresh(c *gin.Context) {
 	})
 }
 
+// @Summary Выход из системы
+// @Tags Auth
+// @Security ApiKeyAuth
+// @Produce json
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} map[string]string
+// @Router /auth/logout [post]
 func (r *identityRoutes) logout(c *gin.Context) {
 	token, err := extractToken(c)
 	if err != nil {

@@ -36,6 +36,14 @@ func newAchievementRoutes(handler *gin.RouterGroup, uc AchievementUseCase) {
 	}
 }
 
+// @Summary Получить список достижений
+// @Description Возвращает список всех публичных достижений
+// @Tags Achievements
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Список достижений"
+// @Failure 500 {object} map[string]string "Ошибка при получении или парсинге достижений"
+// @Router /achievements [get]
 func (r *achievementRoutes) getAllAchievements(c *gin.Context) {
 	achievements, err := r.uc.GetAllAchievements(c.Request.Context())
 	if err != nil {
@@ -70,6 +78,14 @@ func (r *achievementRoutes) getAllAchievements(c *gin.Context) {
 	})
 }
 
+// @Summary Get user achievements
+// @Description Получить достижения пользователя по UUID
+// @Tags achievements
+// @Produce json
+// @Param uuid path string true "UUID пользователя"
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]string
+// @Router /users/achievements/{uuid} [get]
 func (r *achievementRoutes) getUserAchievements(c *gin.Context) {
 	userUUID := c.Param("uuid")
 

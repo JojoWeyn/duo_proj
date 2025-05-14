@@ -152,6 +152,20 @@ func main() {
 	registerRoutes(public, proxy, publicRoutes, serviceURLs)
 	registerRoutes(protected, proxy, protectedRoutes, serviceURLs)
 
+	router.GET("/swagger/:service/*path", func(c *gin.Context) {
+		service := c.Param("service")
+		path := c.Param("path")
+
+		targetURL, ok := serviceURLs[service]
+		if !ok {
+			c.JSON(404, gin.H{"error": "Service not found"})
+			return
+		}
+
+		// Проксирование Swagger-запроса
+		proxy.ProxySwagger(targetURL, path)(c)
+	})
+
 	port := getEnv("PORT", "3211")
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start server: %s", err.Error())

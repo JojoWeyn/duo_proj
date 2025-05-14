@@ -3,7 +3,9 @@ package v1
 import (
 	"context"
 	"crypto/rsa"
+	"fmt"
 	"github.com/golang-jwt/jwt/v4"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -65,6 +67,37 @@ func (h *ProxyHandler) ProxyService(serviceURL string, addUUID bool) gin.Handler
 		c.Request = c.Request.WithContext(ctx)
 
 		proxy.ServeHTTP(c.Writer, c.Request)
+	}
+}
+
+func (p *ProxyHandler) ProxySwagger(targetService, path string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		target := fmt.Sprintf("%s/swagger%s", targetService, path)
+
+		req, err := http.NewRequest(c.Request.Method, target, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create request"})
+			return
+		}
+
+		req.Header = c.Request.Header
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "failed to forward request"})
+			return
+		}
+		defer resp.Body.Close()
+
+		for k, v := range resp.Header {
+			for _, vv := range v {
+				c.Writer.Header().Add(k, vv)
+			}
+		}
+
+		c.Status(resp.StatusCode)
+		io.Copy(c.Writer, resp.Body)
 	}
 }
 

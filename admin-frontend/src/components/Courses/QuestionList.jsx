@@ -99,9 +99,12 @@ export const QuestionList = () => {
         is_correct: newOption.is_correct,
         questionUUID: questionUuid,
       };
-      await questionsAPI.createQuestionOption(newOptionData);
+      const response = await questionsAPI.createQuestionOption(newOptionData);
+      setOptions(prev => ({
+        ...prev,
+        [questionUuid]: [...(prev[questionUuid] || []), response.data]
+      }));
       setNewOption({});
-      loadOptions(questionUuid); // Re-fetch options
     } catch (error) {
       console.error('Ошибка при добавлении варианта ответа', error);
       alert("Ошибка при добавлении варианта ответа");
@@ -115,9 +118,12 @@ export const QuestionList = () => {
         right_text: newPair.right_text,
         questionUUID: questionUuid,
       };
-      await questionsAPI.createMatchingPair(newPairData);
+      const response = await questionsAPI.createMatchingPair(newPairData);
+      setOptions(prev => ({
+        ...prev,
+        [questionUuid]: [...(prev[questionUuid] || []), response.data]
+      }));
       setNewPair({ left_text: '', right_text: '' });
-      loadOptions(questionUuid); // Re-fetch pairs
     } catch (error) {
       console.error('Ошибка при добавлении пары соответствия', error);
       alert("Ошибка при добавлении пары соответствия");
