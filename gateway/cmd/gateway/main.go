@@ -5,10 +5,11 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"github.com/gin-contrib/cors"
 	"log"
 	"os"
 	"time"
+
+	"github.com/gin-contrib/cors"
 
 	v1 "github.com/JojoWeyn/duo-proj/gateway/internal/controller/http/v1"
 	"github.com/JojoWeyn/duo-proj/gateway/internal/middleware"
@@ -107,6 +108,7 @@ func main() {
 		{"GET", "/admin/achievements/list", "user", true},
 
 		{"GET", "/admin/course/list", "course", true},
+		{"POST", "/admin/course/import-excel", "course", true},
 		{"GET", "/admin/course/:course_id/lesson", "course", true},
 		{"GET", "/admin/lesson/:lesson_id/exercise", "course", true},
 		{"GET", "/admin/exercise/:exercise_id/question", "course", true},

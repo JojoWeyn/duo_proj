@@ -103,8 +103,19 @@ func NewCourseComposite(ctx context.Context, db *gorm.DB, cfg Config) (*CourseCo
 	matchingPairUseCase := usecase.NewMatchingPairUseCase(matchingPairRepo)
 	questionOptionUseCase := usecase.NewQuestionOptionUseCase(questionOptionsRepo)
 
+	// Инициализируем сервис импорта Excel
+	excelImportUseCase := usecase.NewExcelImportUseCase(
+		courseRepo,
+		lessonRepo,
+		exerciseRepo,
+		questionRepo,
+		matchingPairRepo,
+		questionOptionsRepo,
+	)
+
+	// Инициализируем маршрутизаторы
 	v1.NewRouter(handler, courseUseCase, lessonUseCase, exerciseUseCase, questionUseCase, attemptUseCase, cfg.GatewayURL)
-	admin.NewRouter(handler, courseUseCase, lessonUseCase, exerciseUseCase, questionUseCase, matchingPairUseCase, questionOptionUseCase, fileS3UseCase)
+	admin.NewRouter(handler, courseUseCase, lessonUseCase, exerciseUseCase, questionUseCase, matchingPairUseCase, questionOptionUseCase, excelImportUseCase, fileS3UseCase)
 	return &CourseComposite{
 		handler: handler,
 	}, nil

@@ -2,14 +2,15 @@ package admin
 
 import (
 	"context"
-	"github.com/JojoWeyn/duo-proj/course-service/internal/controller/http/dto"
-	"github.com/JojoWeyn/duo-proj/course-service/internal/domain/entity"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"strconv"
+
+	"github.com/JojoWeyn/duo-proj/course-service/internal/controller/http/dto"
+	"github.com/JojoWeyn/duo-proj/course-service/internal/domain/entity"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type QuestionUseCase interface {
@@ -77,11 +78,12 @@ type adminRoutes struct {
 	courseUseCase         CourseUseCase
 	matchingPairUseCase   MatchingPairUseCase
 	questionOptionUseCase QuestionOptionUseCase
+	excelImportUseCase    ExcelImportUseCase
 
 	fileS3UseCase FileS3UseCase
 }
 
-func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase, eu ExerciseUseCase, qu QuestionUseCase, mpu MatchingPairUseCase, qou QuestionOptionUseCase, fileS3UseCase FileS3UseCase) {
+func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase, eu ExerciseUseCase, qu QuestionUseCase, mpu MatchingPairUseCase, qou QuestionOptionUseCase, excelImportUseCase ExcelImportUseCase, fileS3UseCase FileS3UseCase) {
 	r := &adminRoutes{
 		questionUseCase:       qu,
 		exerciseUseCase:       eu,
@@ -89,6 +91,7 @@ func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase
 		courseUseCase:         cu,
 		matchingPairUseCase:   mpu,
 		questionOptionUseCase: qou,
+		excelImportUseCase:    excelImportUseCase,
 		fileS3UseCase:         fileS3UseCase,
 	}
 
@@ -134,6 +137,9 @@ func newAdminRoutes(handler *gin.RouterGroup, cu CourseUseCase, lu LessonUseCase
 		h.POST("/file/add", r.addFile)
 		h.POST("/file/unpin", r.unpinFile)
 		h.DELETE("/file/delete", r.deleteFile)
+
+		// Маршрут для импорта курса из Excel
+		h.POST("/course/import-excel", r.importCourseFromExcel)
 
 	}
 }
