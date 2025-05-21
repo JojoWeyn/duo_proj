@@ -1025,10 +1025,33 @@ li {
   border-top: 4px solid var(--info);
 }
 
-.create-button {
+.create-button-container {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 1rem; /* расстояние между кнопками */
+  z-index: 100;
+}
+
+@media (max-width: 480px) {
+  .create-button-container {
+    bottom: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .create-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+.danger {
+  background: var(--error);
+  color: white;
+  padding: 0.5rem 1rem;
+}
+.create-button {
   padding: 1rem 2rem;
   background: var(--primary);
   color: white;
@@ -1041,7 +1064,10 @@ li {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  z-index: 100;
+}
+
+.create-button.import {
+  background: var(--secondary); /* или другой цвет */
 }
 
 .create-button:hover {

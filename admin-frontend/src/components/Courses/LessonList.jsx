@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { coursesAPI, lessonsAPI } from '../../api/api';
 import { useParams, useNavigate } from 'react-router-dom';
+import ConfirmDeleteModal from "../Courses/ConfirmDeleteModal";
 
 export const LessonList = () => {
   const { uuid } = useParams();
@@ -8,6 +9,8 @@ export const LessonList = () => {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [lessonToDelete, setLessonToDelete] = useState(null);
 
   useEffect(() => {
     const loadLessons = async () => {
@@ -33,16 +36,14 @@ export const LessonList = () => {
     loadLessons();
   }, [uuid]);
 
-  const handleDelete = async (lessonUUID) => {
-    const confirmDelete = window.confirm("Вы уверены, что хотите удалить этот урок?");
-    if (!confirmDelete) return;
-    
+  const confirmDelete = async () => {
     try {
-      await lessonsAPI.deleteLesson(lessonUUID);
-      setLessons(lessons.filter(lesson => lesson.uuid !== lessonUUID));
+      await lessonsAPI.deleteLesson(lessonToDelete);
+      setLessons((prev) => prev.filter((course) => course.uuid !== lessonToDelete));
+      setLessonToDelete(null);
     } catch (error) {
-      console.error('Error deleting lesson:', error);
-      alert("Ошибка при удалении урока");
+      console.error("Ошибка при удалении:", error);
+      alert("Ошибка при удалении.");
     }
   };
 
@@ -72,7 +73,7 @@ export const LessonList = () => {
             <div className="card-buttons">
               <button 
                 className="delete-button full-width" 
-                onClick={() => handleDelete(lesson.uuid)}
+                onClick={() => setLessonToDelete(lesson.uuid)}
               >
                 Удалить
               </button>
@@ -86,13 +87,19 @@ export const LessonList = () => {
           </div>
         ))}
       </div>
-
+      <div class="create-button-container">
       <button 
         className="create-button"
         onClick={() => navigate(`/courses/${uuid}/lesson/create`)}
       >
         + Добавить урок
       </button>
+      </div>
+      <ConfirmDeleteModal
+        show={!!lessonToDelete}
+        onConfirm={confirmDelete}
+        onCancel={() => setLessonToDelete(null)}
+      />
     </div>
   );
 };

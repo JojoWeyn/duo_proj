@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
 import { coursesAPI } from "../../api/api";
 import { Link, useNavigate } from "react-router-dom";
+import ImportExcelModal from "../Courses/ImportModal";
+import ConfirmDeleteModal from "../Courses/ConfirmDeleteModal";
 
 export const CourseList = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState(null);
 
   useEffect(() => {
     document.title = "Курсы";
@@ -27,15 +31,14 @@ export const CourseList = () => {
     }
   };
 
-  const handleDelete = async (courseId) => {
-    const isConfirmed = window.confirm("Вы уверены, что хотите удалить этот курс?");
-    if (!isConfirmed) return;
-
+  const confirmDelete = async () => {
     try {
-      await coursesAPI.deleteCourse(courseId);
-      setCourses((prev) => prev.filter((course) => course.uuid !== courseId));
+      await coursesAPI.deleteCourse(courseToDelete);
+      setCourses((prev) => prev.filter((course) => course.uuid !== courseToDelete));
+      setCourseToDelete(null);
     } catch (error) {
       console.error("Ошибка при удалении курса:", error);
+      alert("Ошибка при удалении курса.");
     }
   };
 
@@ -50,7 +53,7 @@ export const CourseList = () => {
         </div>
       </div>
       <div className="card-buttons">
-        <button onClick={() => handleDelete(course.uuid)} className="delete-button full-width">
+        <button onClick={() => setCourseToDelete(course.uuid)} className="delete-button full-width">
           Удалить
         </button>
         <button onClick={() => navigate(`/courses/${course.uuid}/update`)} className="edit-button full-width">
@@ -69,12 +72,34 @@ export const CourseList = () => {
       <div className="courses-container">
         {courses.map(renderCourse)}
       </div>
-      <button 
-        className="create-button"
-        onClick={() => navigate("/course/create")}
-      >
-        + Добавить курс
-      </button>
-    </div>
+      <div className="create-button-container">
+        <button 
+          className="create-button"
+          onClick={() => navigate("/course/create")}
+        >
+            + Добавить курс
+        </button>
+
+        <button
+          className="create-button import"
+          onClick={() => setShowModal(true)}
+        >
+          Импорт курса
+        </button>
+      </div>
+      <ImportExcelModal
+        show={showModal}
+        handleClose={() => setShowModal(false)}
+      />
+
+      <ConfirmDeleteModal
+        show={!!courseToDelete}
+        onConfirm={confirmDelete}
+        onCancel={() => setCourseToDelete(null)}
+      />
+      
+      </div>
+      
+  
   );
 };

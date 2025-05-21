@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { exercisesAPI, filesAPI, lessonsAPI } from '../../api/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import FileAttachModal from '../Files/FileAttachModal'
+import ConfirmDeleteModal from "../Courses/ConfirmDeleteModal";
 
 export const ExercisesList = () => {
   const { uuid } = useParams();
@@ -13,6 +14,9 @@ export const ExercisesList = () => {
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [selectedQuestionUuid, setSelectedQuestionUuid] = useState(null);
   const [lessonTitle, setLessonTitle] = useState('');
+
+  const [exerciseToDelete, setExerciseToDelete] = useState(null);
+
 
   const openAttachModal = (questionUuid) => {
     setSelectedQuestionUuid(questionUuid);
@@ -92,15 +96,14 @@ export const ExercisesList = () => {
     }
   };
 
-  const handleDeleteExercise = async (exerciseUuid) => {
-    if (window.confirm('Вы уверены, что хотите удалить это упражнение?')) {
-      try {
-        await exercisesAPI.deleteExercise(exerciseUuid);  // Используем API для удаления
-        setExercises((prevExercises) => prevExercises.filter((exercise) => exercise.uuid !== exerciseUuid));  // Обновляем список упражнений
-      } catch (error) {
-        console.error('Error deleting exercise:', error);
-        setError('Ошибка при удалении упражнения!');
-      }
+  const confirmDeleteExercise = async () => {
+    try {
+      await exercisesAPI.deleteExercise(exerciseToDelete);
+      setExercises((prev) => prev.filter((e) => e.uuid !== exerciseToDelete));
+      setExerciseToDelete(null);
+    } catch (error) {
+      console.error('Error deleting exercise:', error);
+      setError('Ошибка при удалении упражнения!');
     }
   };
 
@@ -210,7 +213,7 @@ export const ExercisesList = () => {
             <div className="card-buttons">
               <button
                 className="delete-button full-width"
-                onClick={() => handleDeleteExercise(exercise.uuid)}
+                onClick={() => setExerciseToDelete(exercise.uuid)}
               >
                 Удалить
               </button>
@@ -221,13 +224,14 @@ export const ExercisesList = () => {
           </div>
         ))}
       </div>
-
+      <div class="create-button-container">
       <button 
         className="create-button"
         onClick={() => navigate(`/lessons/${uuid}/exercise/create`)}
       >
         + Добавить упражнение
       </button>
+      </div>
 
       {showAttachModal && (
         <FileAttachModal
@@ -237,6 +241,12 @@ export const ExercisesList = () => {
           entityUuid={selectedQuestionUuid}
         />
       )}
+
+<ConfirmDeleteModal
+  show={!!exerciseToDelete}
+  onConfirm={confirmDeleteExercise}
+  onCancel={() => setExerciseToDelete(null)}
+/>
     </div>
   );
 };

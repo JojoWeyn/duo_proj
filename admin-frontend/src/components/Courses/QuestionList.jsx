@@ -277,7 +277,7 @@ export const QuestionList = () => {
                     <div className="option-box">
                       {option.text} {option.is_correct ? '✔️' : '❌'}
                     </div>
-                    <button onClick={() => handleDeleteOption(question.uuid, option.uuid)}>
+                    <button onClick={() => handleDeleteOption(option.question_uuid, option.uuid)}>
                       <img src={trashIcon} alt="" className='icon-medium'/>
                     </button>
                   </div>
@@ -322,7 +322,7 @@ export const QuestionList = () => {
                     <span className="right-text">{pair.right_text}</span>
                     <button
                       className="button"
-                      onClick={() => handleDeletePair(question.uuid, pair.uuid)}
+                      onClick={() => handleDeletePair(pair.question_uuid, pair.uuid)}
                     >
                       <img src={trashIcon} alt="" className='icon-small'/>
                     </button>
@@ -360,9 +360,12 @@ export const QuestionList = () => {
           </div>
         ))}
       </div>
+      <div class="create-button-container">
       <button className="create-button" onClick={() => navigate(`/exercises/${uuid}/question/create`)}>
         + Добавить вопрос
       </button>
+
+    </div>
 
       {showAttachModal && (
         <FileAttachModal

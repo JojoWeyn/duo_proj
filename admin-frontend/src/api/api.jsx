@@ -113,6 +113,10 @@ export const coursesAPI = {
   createCourse: (data) => api.post('/v1/admin/course', data),
   updateCourse: (id, data) => api.patch(`/v1/admin/course/${id}`, data),
   deleteCourse: (id) => api.delete(`/v1/admin/course/${id}`),
+  importExcel: (formData) => api.post("/v1/admin/course/import-excel", formData, 
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
 };
 
 export const lessonsAPI = {
